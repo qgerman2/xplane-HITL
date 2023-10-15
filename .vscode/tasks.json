@@ -1,0 +1,41 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+        {
+            "type": "cppbuild",
+            "label": "C/C++: cl.exe compilar 32 bit",
+            "command": "cl.exe",
+            // ** Argumentos para el compilador **
+            "args": [
+                // Defines requeridos por X-Plane SDK
+                "/DIBM=1",
+                "/DXPLM200=1",
+                // Crear un .dll
+                "/LD",
+                // Librerias
+                "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
+                "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
+                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM.lib",
+                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPWidgets.lib",
+                "OpenGL32.lib",
+                // Codigo fuente
+                "${workspaceFolder}\\*.cpp",
+                // Archivos de salida
+                "/Fe${workspaceFolder}\\build\\win.xpl",
+				"/Fd${workspaceFolder}\\build\\",
+				"/Fo${workspaceFolder}\\build\\",
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": [
+                "$msCompile"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "compilador: cl.exe"
+        }
+    ]
+}
