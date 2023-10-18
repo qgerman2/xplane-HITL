@@ -137,11 +137,11 @@ void Sim::UpdateState() {
 
 void Sim::SendState() {
     struct {
-        const char header[7] = "SENSOR";
-        AP::ins_data_message_t ins;
+        char header[4] = { 'H', 'I', 'T', 'L' };
         AP::baro_data_message_t baro;
         AP::mag_data_message_t mag;
         AP::gps_data_message_t gps;
+        AP::ins_data_message_t ins;
     } msg;
     // Inertial sensor
     msg.ins.accel = state.accel;

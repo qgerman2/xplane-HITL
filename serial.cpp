@@ -1,36 +1,31 @@
-#include <asio.hpp>
+#include <serialib.h>
 #include <XPLMUtilities.h>
 #include <cstdint>
 #include <thread>
 #include <vector>
 #include <string>
+#include <format>
 #include "serial.hpp"
 
 namespace Serial {
-    asio::io_context io_context{};
-    asio::serial_port serial{ io_context };
-    asio::awaitable<void> Read();
-    bool IsOpen() { return serial.is_open(); }
-    void PrintError(asio::error_code ec, std::string when);
+    serialib serial;
+    void Read();
+    bool IsOpen() { return serial.isDeviceOpen(); };
+    void PrintError(int code, std::string what);
 }
 
 std::vector<std::string> Serial::GetPortsAvailable() {
-    std::vector<std::string> ports_available{};
     if (IsOpen()) {
         Disconnect();
     }
-    for (int i = 0; i < MAX_SERIAL_PORTS; i++) {
-        asio::error_code ec;
-        std::string port = std::format("COM{}", i);
-        serial.open(port, ec);
-        if (ec.value() == 0) {
-            try {
-                ports_available.push_back(port);
-                serial.close();
-            }
-            catch (asio::system_error e) {
-                PrintError(e.code(), "closing a port");
-            }
+    std::vector<std::string> ports_available{};
+    for (int i = 1; i < 99; i++) {
+        char device_name[64];
+        sprintf(device_name, "\\\\.\\COM%d", i);
+        XPLMDebugString(device_name);
+        if (serial.openDevice(device_name, BAUD_RATE) == 1) {
+            serial.closeDevice();
+            ports_available.push_back(std::string(device_name));
         }
     }
     return ports_available;
@@ -40,72 +35,44 @@ bool Serial::Connect(std::string port) {
     if (IsOpen()) {
         Disconnect();
     }
-    try {
-        serial.open(port);
-        serial.set_option(asio::serial_port::baud_rate(115200));
-        serial.set_option(asio::serial_port::character_size(8));
-        serial.set_option(asio::serial_port::flow_control(asio::serial_port::flow_control::none));
-        EscapeCommFunction(serial.native_handle(), CLRRTS);
-        EscapeCommFunction(serial.native_handle(), SETDTR);
-        asio::co_spawn(io_context, Read(), asio::detached);
+    // baud 115200, 8N1
+    int res = serial.openDevice(port.c_str(), 115200);
+    if (res == 1) {
+        serial.setDTR();
+        serial.clearRTS();
         return true;
-    }
-    catch (asio::system_error e) {
-        PrintError(e.code(), "trying to connect");
+    } else {
+        PrintError(res, "trying to connect");
         return false;
     }
 }
 
 void Serial::Disconnect() {
     if (IsOpen()) {
-        asio::error_code ec;
-        ::FlushFileBuffers(serial.native_handle());
-        serial.close(ec);
-        io_context.run();
-        if (serial.is_open()) {
-            serial = asio::serial_port{ io_context };
-        }
+        serial.closeDevice();
     }
 }
 
 void Serial::Send(void *buffer, size_t bytes) {
     if (IsOpen()) {
-        asio::error_code ec;
-        asio::write(serial, asio::buffer(buffer, bytes), ec);
-        if (ec.value() != 0) {
-            PrintError(ec, "writing to serial port");
-            Disconnect();
-        }
+        serial.writeBytes(buffer, bytes);
     }
 }
 
-asio::awaitable<void> Serial::Read() {
+void Serial::Read() {
     char data[1024];
-    try {
-        std::size_t bytes = co_await asio::async_read(
-            serial,
-            asio::buffer(data, 1024),
-            asio::use_awaitable);
-    }
-    catch (asio::system_error e) {
-        PrintError(e.code(), "reading from serial port");
-        Disconnect();
-        co_return;
-    }
-    asio::co_spawn(io_context, Read(), asio::detached);
+    int pos = 0;
+    int bytes = serial.available();
+    serial.readBytes(data, 1024);
 }
 
 void Serial::Poll() {
     if (IsOpen()) {
-        if (io_context.stopped()) {
-            io_context.restart();
-        }
-        ::FlushFileBuffers(serial.native_handle());
-        io_context.poll();
+        //Read();
     }
 }
 
-void Serial::PrintError(asio::error_code ec, std::string when) {
-    XPLMDebugString(std::format("Error {}. {}: {}\n",
-        when, ec.value(), ec.message()).c_str());
+void Serial::PrintError(int code, std::string what) {
+    XPLMDebugString(std::format("Error {}. [{}]\n",
+        what, code).c_str());
 }

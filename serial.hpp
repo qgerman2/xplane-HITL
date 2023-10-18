@@ -4,6 +4,7 @@
 #include <memory>
 
 #define MAX_SERIAL_PORTS 256
+#define BAUD_RATE 115200
 
 namespace Serial {
     std::vector<std::string> GetPortsAvailable();
