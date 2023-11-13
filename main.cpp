@@ -16,7 +16,7 @@ PLUGIN_API int XPluginStart(
     char *outDesc) {
 
     strcpy(outName, "Ardupilot HITL");
-    strcpy(outSig, "https://github.com/qgerman2/xplane-eahrs-hitl");
+    strcpy(outSig, "https://github.com/qgerman2/xplane-HITL");
     strcpy(outDesc, "A plugin to enable simple HITL testing with Ardupilot");
 
     UI::Menu::Create();

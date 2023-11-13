@@ -19,7 +19,7 @@ std::vector<std::string> Serial::GetPortsAvailable() {
         Disconnect();
     }
     std::vector<std::string> ports_available{};
-    for (int i = 1; i < 99; i++) {
+    for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
         char device_name[64];
         sprintf(device_name, "\\\\.\\COM%d", i);
         XPLMDebugString(device_name);
