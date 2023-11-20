@@ -8,6 +8,7 @@
 #include <format>
 #include <numeric>
 #include "ui.hpp"
+#include "main.hpp"
 #include "serial.hpp"
 
 namespace UI::Menu {
@@ -18,7 +19,7 @@ namespace UI::Menu {
 namespace UI::Window {
     XPWidgetID id;
     int width = 200;
-    int height = 100;
+    int height = 300;
     int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     namespace ListPorts {
         XPWidgetID id;
@@ -30,6 +31,10 @@ namespace UI::Window {
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
     namespace ButtonDisconnect {
+        XPWidgetID id;
+        int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+    }
+    namespace ButtonState {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
@@ -77,6 +82,13 @@ void UI::Window::Create() {
         width - 20,
         height - 95,
         1, "Disconnect", 0, id, xpWidgetClass_Button);
+    XPAddWidgetCallback(ButtonDisconnect::id, ButtonDisconnect::OnEvent);
+    ButtonState::id = XPCreateWidget(
+        20,
+        height - 40,
+        width - 20,
+        height - 55,
+        1, "Start calibration", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonDisconnect::id, ButtonDisconnect::OnEvent);
 
     int screenWidth;
@@ -147,4 +159,25 @@ int UI::Window::ButtonDisconnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID 
 void UI::OnSerialDisconnect() {
     XPShowWidget(Window::ButtonConnect::id);
     UI::Window::ListPorts::UpdateSerialPorts();
+}
+
+int UI::Window::ButtonState::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
+    if (inWidget != id) { return 0; }
+    switch (inMessage) {
+    case xpMsg_PushButtonPressed:
+        {
+            State state = GetState();
+            switch (state) {
+                case State::Calibration:
+                    SetState(State::Telemetry);
+                    break;
+                case State::Telemetry:
+                    SetState(State::Calibration);
+                    break;
+            }
+            return 1;
+        }
+    default:
+        return 0;
+    }
 }

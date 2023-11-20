@@ -1,6 +1,5 @@
 #include <serialib.h>
 #include <XPLMUtilities.h>
-#include <XPLMProcessing.h>
 #include <cstdint>
 #include <thread>
 #include <vector>
@@ -42,7 +41,6 @@ bool Serial::Connect(std::string port) {
     if (res == 1) {
         serial.setDTR();
         serial.clearRTS();
-        XPLMRegisterFlightLoopCallback(Loop, -1, NULL);
         return true;
     } else {
         PrintError(res, "trying to connect");
