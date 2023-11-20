@@ -10,7 +10,7 @@
 #include "ui.hpp"
 #include "serial.hpp"
 
-#define m_to_cm 100
+#define m_to_cm 100.0f
 #define deg_to_rad 3.1415f / 180.0f
 #define inhg_to_pa 3386.38867
 #define decimaldeg_to_deg 1.0e7
@@ -54,13 +54,14 @@ namespace Sim {
         XPLMDataRef accel_x = XPLMFindDataRef("sim/flightmodel/forces/g_axil");
         XPLMDataRef accel_y = XPLMFindDataRef("sim/flightmodel/forces/g_side");
         XPLMDataRef accel_z = XPLMFindDataRef("sim/flightmodel/forces/g_nrml");
-        XPLMDataRef gyro_x = XPLMFindDataRef("sim/flightmodel/position/Prad");
-        XPLMDataRef gyro_y = XPLMFindDataRef("sim/flightmodel/position/Qrad");
-        XPLMDataRef gyro_z = XPLMFindDataRef("sim/flightmodel/position/Rrad");
+        XPLMDataRef gyro_x = XPLMFindDataRef("sim/flightmodel/position/P");
+        XPLMDataRef gyro_y = XPLMFindDataRef("sim/flightmodel/position/Q");
+        XPLMDataRef gyro_z = XPLMFindDataRef("sim/flightmodel/position/R");
         XPLMDataRef roll = XPLMFindDataRef("sim/flightmodel/position/phi");
         XPLMDataRef pitch = XPLMFindDataRef("sim/flightmodel/position/theta");
         XPLMDataRef yaw = XPLMFindDataRef("sim/flightmodel/position/psi");
         XPLMDataRef baro = XPLMFindDataRef("sim/weather/barometer_current_inhg");
+        XPLMDataRef temperature = XPLMFindDataRef("sim/weather/temperature_ambient_c");
         XPLMDataRef days = XPLMFindDataRef("sim/time/local_date_days");
         XPLMDataRef seconds = XPLMFindDataRef("sim/time/local_time_sec");
         XPLMDataRef latitude = XPLMFindDataRef("sim/flightmodel/position/latitude");
@@ -77,6 +78,7 @@ namespace Sim {
         Eigen::Vector3f gyro;
         Eigen::Vector3f orientation;
         float pressure;
+        float temperature;
         int day;
         float seconds;
         double latitude;
@@ -124,6 +126,7 @@ void Sim::UpdateState() {
         XPLMGetDataf(DataRef::yaw)
     };
     state.pressure = XPLMGetDataf(DataRef::baro);
+    state.temperature = XPLMGetDataf(DataRef::temperature);
     state.day = XPLMGetDatai(DataRef::days);
     state.seconds = XPLMGetDataf(DataRef::seconds);
     state.latitude = XPLMGetDatad(DataRef::latitude);
@@ -147,30 +150,28 @@ void Sim::ProcessState() {
     } msg;
     // Inertial sensor
     msg.ins.accel = {
-        state.accel.x() * GRAVITY_MSS,
-        state.accel.y() * GRAVITY_MSS,
+        -state.accel.x() * GRAVITY_MSS,
+        -state.accel.y() * GRAVITY_MSS,
         -state.accel.z() * GRAVITY_MSS
     };
     msg.ins.gyro = {
-        state.gyro.x(),
-        state.gyro.y(),
-        state.gyro.z()
+        state.gyro.x() * deg_to_rad,
+        state.gyro.y() * deg_to_rad,
+        state.gyro.z() * deg_to_rad
     };
     msg.ins.temperature = 25;
-    // Altimeter
+    // Barometer
     msg.baro.instance = 0;
     msg.baro.pressure_pa = state.pressure * inhg_to_pa;
-    msg.baro.temperature = 25;
+    msg.baro.temperature = state.temperature;
     // Compass
-    Eigen::Vector3f orientation_rad = state.orientation;
+    Eigen::Vector3f orientation_rad = state.orientation * deg_to_rad;
     Eigen::Quaternionf orientation =
         Eigen::AngleAxisf(orientation_rad.x(), Eigen::Vector3f::UnitX())
         * Eigen::AngleAxisf(orientation_rad.y(), Eigen::Vector3f::UnitY())
-        * Eigen::AngleAxisf(orientation_rad.z(), Eigen::Vector3f::UnitZ());
-    Eigen::Vector3f north = { 1, 0, 0 };
+        * Eigen::AngleAxisf(-orientation_rad.z(), Eigen::Vector3f::UnitZ());
+    Eigen::Vector3f north = { 400.0f, 0, 0 };
     msg.mag.field = orientation * north;
-    msg.mag.field = { 10.0f, 10.0f, 10.0f };
-    msg.mag.field = msg.mag.field.normalized();
     // GPS
     msg.gps.gps_week = 0xFFFF;
     msg.gps.ms_tow = 0;
@@ -179,11 +180,11 @@ void Sim::ProcessState() {
     msg.gps.horizontal_pos_accuracy = 1;
     msg.gps.vertical_pos_accuracy = 1;
     msg.gps.horizontal_vel_accuracy = 1;
-    msg.gps.hdop = 100;
-    msg.gps.vdop = 100;
+    msg.gps.hdop = 1;
+    msg.gps.vdop = 1;
     msg.gps.latitude = state.latitude * decimaldeg_to_deg;
     msg.gps.longitude = state.longitude * decimaldeg_to_deg;
-    msg.gps.msl_altitude = state.elevation;
+    msg.gps.msl_altitude = state.elevation * m_to_cm;
     msg.gps.ned_vel_north = -state.gps_vel.z();
     msg.gps.ned_vel_east = state.gps_vel.x();
     msg.gps.ned_vel_down = -state.gps_vel.y();

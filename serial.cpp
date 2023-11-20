@@ -22,7 +22,6 @@ std::vector<std::string> Serial::GetPortsAvailable() {
     for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
         char device_name[64];
         sprintf(device_name, "\\\\.\\COM%d", i);
-        XPLMDebugString(device_name);
         if (serial.openDevice(device_name, BAUD_RATE) == 1) {
             serial.closeDevice();
             ports_available.push_back(std::string(device_name));
