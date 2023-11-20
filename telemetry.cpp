@@ -6,7 +6,7 @@
 #include <format>
 #include <cstdint>
 #include <numbers>
-#include "sim.hpp"
+#include "telemetry.hpp"
 #include "ui.hpp"
 #include "serial.hpp"
 
@@ -49,7 +49,7 @@ namespace AP {
     } ins_data_message_t;
 }
 
-namespace Sim {
+namespace Telemetry {
     namespace DataRef {
         XPLMDataRef accel_x = XPLMFindDataRef("sim/flightmodel/forces/g_axil");
         XPLMDataRef accel_y = XPLMFindDataRef("sim/flightmodel/forces/g_side");
@@ -86,30 +86,10 @@ namespace Sim {
         double elevation;
         Eigen::Vector3f gps_vel;
     } state;
-    float Loop(
-        float inElapsedSinceLastCall,
-        float inElapsedTimeSinceLastFlightLoop,
-        int inCounter,
-        void *inRefcon);
-    void UpdateState();
-    void ProcessState();
-}
-
-float Sim::Loop(
-    float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop,
-    int inCounter, void *inRefcon) {
-    if (!Serial::IsOpen()) {
-        UI::OnSerialDisconnect();
-        return 0.0;
-    }
-    UpdateState();
-    ProcessState();
-    Serial::Poll();
-    return -1.0;
 }
 
 // get raw data from xplane
-void Sim::UpdateState() {
+void Telemetry::UpdateState() {
     state.accel = {
         XPLMGetDataf(DataRef::accel_x),
         XPLMGetDataf(DataRef::accel_y),
@@ -140,7 +120,7 @@ void Sim::UpdateState() {
 }
 
 // convert raw xplane data to ardupilot and send
-void Sim::ProcessState() {
+void Telemetry::ProcessState() {
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
         AP::baro_data_message_t baro;

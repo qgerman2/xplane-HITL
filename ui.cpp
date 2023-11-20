@@ -2,19 +2,13 @@
 #include <XPLMDisplay.h>
 #include <XPLMGraphics.h>
 #include <XPLMUtilities.h>
-#include <XPLMProcessing.h>
 #include <XPWidgets.h>
 #include <XPStandardWidgets.h>
 #include <XPWidgetsEx.h>
 #include <format>
 #include <numeric>
 #include "ui.hpp"
-#include "sim.hpp"
 #include "serial.hpp"
-
-namespace UI {
-    void OnSerialConnect();
-}
 
 namespace UI::Menu {
     XPLMMenuID id;
@@ -130,7 +124,7 @@ int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inW
                 xpProperty_PopupCurrentItem,
                 NULL);
             if (Serial::Connect(UI::Window::ListPorts::ports.at(port))) {
-                OnSerialConnect();
+                XPHideWidget(Window::ButtonConnect::id);
             }
         }
         return 1;
@@ -148,11 +142,6 @@ int UI::Window::ButtonDisconnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID 
     default:
         return 0;
     }
-}
-
-void UI::OnSerialConnect() {
-    XPHideWidget(Window::ButtonConnect::id);
-    XPLMRegisterFlightLoopCallback(Sim::Loop, -1, NULL);
 }
 
 void UI::OnSerialDisconnect() {

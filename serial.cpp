@@ -1,11 +1,14 @@
 #include <serialib.h>
 #include <XPLMUtilities.h>
+#include <XPLMProcessing.h>
 #include <cstdint>
 #include <thread>
 #include <vector>
 #include <string>
 #include <format>
+#include "main.hpp"
 #include "serial.hpp"
+#include "ui.hpp"
 
 namespace Serial {
     serialib serial;
@@ -39,6 +42,7 @@ bool Serial::Connect(std::string port) {
     if (res == 1) {
         serial.setDTR();
         serial.clearRTS();
+        XPLMRegisterFlightLoopCallback(Loop, -1, NULL);
         return true;
     } else {
         PrintError(res, "trying to connect");
@@ -49,6 +53,7 @@ bool Serial::Connect(std::string port) {
 void Serial::Disconnect() {
     if (IsOpen()) {
         serial.closeDevice();
+        UI::OnSerialDisconnect();
     }
 }
 

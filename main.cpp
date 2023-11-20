@@ -8,7 +8,20 @@
 
 #include "serial.hpp"
 #include "ui.hpp"
-#include "sim.hpp"
+#include "telemetry.hpp"
+
+float Loop(
+    float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop,
+    int inCounter, void *inRefcon) {
+    if (!Serial::IsOpen()) {
+        UI::OnSerialDisconnect();
+        return 0.0;
+    }
+    Telemetry::UpdateState();
+    Telemetry::ProcessState();
+    Serial::Poll();
+    return -1.0;
+}
 
 PLUGIN_API int XPluginStart(
     char *outName,
