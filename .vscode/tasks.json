@@ -16,6 +16,7 @@
                 "/I${workspaceFolder}\\",
                 "/I${workspaceFolder}\\XPWidgetsEx\\",
                 "/I${workspaceFolder}\\serialib\\",
+                "/I${workspaceFolder}\\tweeny\\",
                 "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
                 "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
                 "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM.lib",

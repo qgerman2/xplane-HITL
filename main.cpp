@@ -13,10 +13,6 @@
 #include "telemetry.hpp"
 #include "calibration.hpp"
 
-State state;
-void SetState(State new_state) {state = new_state;}
-State GetState() {return state;}
-
 PLUGIN_API int XPluginStart(
     char *outName,
     char *outSig,
@@ -49,20 +45,14 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inPa
 
 }
 
-float Loop(
-    float inElapsedSinceLastCall, float inElapsedTimeSinceLastFlightLoop,
-    int inCounter, void *inRefcon) {
-    switch (state) {
-        case State::Telemetry:
-            if (Serial::IsOpen()) {
-                Telemetry::UpdateState();
-                Telemetry::ProcessState();
-                Serial::Poll();
-            }
-            break;
-        case State::Calibration:
-            Calibration::Loop();
-            break;
+float Loop(float dt, float, int, void *) {
+    if (Serial::IsOpen()) {
+        Telemetry::UpdateState();
+        Telemetry::ProcessState();
+        Serial::Poll();
+    }
+    if (Calibration::IsEnabled()) {
+        Calibration::Loop(dt);
     }
     return -1.0;
 }
