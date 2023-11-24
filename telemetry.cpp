@@ -7,13 +7,10 @@
 #include <cstdint>
 #include <numbers>
 #include "telemetry.hpp"
+#include "calibration.hpp"
 #include "ui.hpp"
 #include "serial.hpp"
-
-#define m_to_cm 100.0f
-#define deg_to_rad 3.1415f / 180.0f
-#define inhg_to_pa 3386.38867
-#define decimaldeg_to_deg 1.0e7
+#include "util.hpp"
 
 // Data structures expected by ArduPilot
 namespace AP {
@@ -129,11 +126,12 @@ void Telemetry::ProcessState() {
         AP::ins_data_message_t ins;
     } msg;
     // Inertial sensor
-    msg.ins.accel = {
-        -state.accel.x() * GRAVITY_MSS,
-        -state.accel.y() * GRAVITY_MSS,
-        -state.accel.z() * GRAVITY_MSS
-    };
+    if (!Calibration::IsEnabled()) {
+        msg.ins.accel = -state.accel * GRAVITY_MSS;
+    } else {
+        Eigen::Vector3f down = { 0, 0, -GRAVITY_MSS };
+        msg.ins.accel = EulerToQuat(-state.orientation) * down;
+    }
     msg.ins.gyro = {
         state.gyro.x() * deg_to_rad,
         state.gyro.y() * deg_to_rad,
@@ -145,13 +143,8 @@ void Telemetry::ProcessState() {
     msg.baro.pressure_pa = state.pressure * inhg_to_pa;
     msg.baro.temperature = state.temperature;
     // Compass
-    Eigen::Vector3f orientation_rad = state.orientation * deg_to_rad;
-    Eigen::Quaternionf orientation =
-        Eigen::AngleAxisf(orientation_rad.x(), Eigen::Vector3f::UnitX())
-        * Eigen::AngleAxisf(orientation_rad.y(), Eigen::Vector3f::UnitY())
-        * Eigen::AngleAxisf(-orientation_rad.z(), Eigen::Vector3f::UnitZ());
-    Eigen::Vector3f north = { 400.0f, 0, 0 };
-    msg.mag.field = orientation * north;
+    Eigen::Vector3f north = { 400, 0, 0 };
+    msg.mag.field = EulerToQuat(-state.orientation) * north;
     // GPS
     msg.gps.gps_week = 0xFFFF;
     msg.gps.ms_tow = 0;
@@ -165,8 +158,15 @@ void Telemetry::ProcessState() {
     msg.gps.latitude = state.latitude * decimaldeg_to_deg;
     msg.gps.longitude = state.longitude * decimaldeg_to_deg;
     msg.gps.msl_altitude = state.elevation * m_to_cm;
-    msg.gps.ned_vel_north = -state.gps_vel.z();
-    msg.gps.ned_vel_east = state.gps_vel.x();
-    msg.gps.ned_vel_down = -state.gps_vel.y();
+    if (!Calibration::IsEnabled()) {
+        msg.gps.ned_vel_north = -state.gps_vel.z();
+        msg.gps.ned_vel_east = state.gps_vel.x();
+        msg.gps.ned_vel_down = -state.gps_vel.y();
+    } else {
+        msg.gps.ned_vel_north = 0;
+        msg.gps.ned_vel_east = 0;
+        msg.gps.ned_vel_down = 0;
+    }
+
     Serial::Send(&msg, sizeof(msg));
 }

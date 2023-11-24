@@ -46,13 +46,13 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inPa
 }
 
 float Loop(float dt, float, int, void *) {
+    if (Calibration::IsEnabled()) {
+        Calibration::Loop(dt);
+    }
     if (Serial::IsOpen()) {
         Telemetry::UpdateState();
         Telemetry::ProcessState();
         Serial::Poll();
-    }
-    if (Calibration::IsEnabled()) {
-        Calibration::Loop(dt);
     }
     return -1.0;
 }
