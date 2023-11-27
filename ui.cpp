@@ -20,7 +20,7 @@ namespace UI::Menu {
 namespace UI::Window {
     XPWidgetID id;
     int width = 200;
-    int height = 300;
+    int height = 200;
     int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     namespace ListPorts {
         XPWidgetID id;
@@ -44,6 +44,10 @@ namespace UI::Window {
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
     namespace ButtonCalibrationPrevStep {
+        XPWidgetID id;
+        int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+    }
+    namespace ButtonCalibrationCompass {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
@@ -113,6 +117,13 @@ void UI::Window::Create() {
         height - 145,
         1, ">>", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonCalibrationNextStep::id, ButtonCalibrationNextStep::OnEvent);
+    ButtonCalibrationCompass::id = XPCreateWidget(
+        20,
+        height - 160,
+        width - 20,
+        height - 175,
+        1, "Toggle rotation", 0, id, xpWidgetClass_Button);
+    XPAddWidgetCallback(ButtonCalibrationCompass::id, ButtonCalibrationCompass::OnEvent);
 
     int screenWidth;
     int screenHeight;
@@ -188,12 +199,10 @@ int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID
     if (inWidget != id) { return 0; }
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
-        if (Calibration::IsEnabled()) {
-            Calibration::Disable();
-            XPSetWidgetDescriptor(ButtonCalibration::id, "Begin calibration");
-        } else {
-            Calibration::Enable();
+        if (Calibration::Toggle()) {
             XPSetWidgetDescriptor(ButtonCalibration::id, "End calibration");
+        } else {
+            XPSetWidgetDescriptor(ButtonCalibration::id, "Begin calibration");
         }
         return 1;
     default:
@@ -204,9 +213,7 @@ int UI::Window::ButtonCalibrationNextStep::OnEvent(XPWidgetMessage inMessage, XP
     if (inWidget != id) { return 0; }
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
-        if (Calibration::IsEnabled()) {
-            Calibration::NextCalibrationStep();
-        }
+        Calibration::NextCalibrationStep();
         return 1;
     default:
         return 0;
@@ -216,9 +223,17 @@ int UI::Window::ButtonCalibrationPrevStep::OnEvent(XPWidgetMessage inMessage, XP
     if (inWidget != id) { return 0; }
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
-        if (Calibration::IsEnabled()) {
-            Calibration::PreviousCalibrationStep();
-        }
+        Calibration::PreviousCalibrationStep();
+        return 1;
+    default:
+        return 0;
+    }
+}
+int UI::Window::ButtonCalibrationCompass::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
+    if (inWidget != id) { return 0; }
+    switch (inMessage) {
+    case xpMsg_PushButtonPressed:
+        Calibration::ToggleRotation();
         return 1;
     default:
         return 0;

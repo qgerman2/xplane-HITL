@@ -15,7 +15,7 @@ namespace Calibration {
     void NextCalibrationStep();
     void PreviousCalibrationStep();
     void Loop(float dt);
-    void Enable();
-    void Disable();
     bool IsEnabled();
+    bool Toggle();
+    void ToggleRotation();
 }

@@ -20,8 +20,6 @@ namespace Calibration {
         XPLMDataRef vx = XPLMFindDataRef("sim/flightmodel/position/local_vx");
         XPLMDataRef vy = XPLMFindDataRef("sim/flightmodel/position/local_vy");
         XPLMDataRef vz = XPLMFindDataRef("sim/flightmodel/position/local_vz");
-        XPLMDataRef roll = XPLMFindDataRef("sim/flightmodel/position/phi");
-        XPLMDataRef pitch = XPLMFindDataRef("sim/flightmodel/position/theta");
         XPLMDataRef yaw = XPLMFindDataRef("sim/flightmodel/position/psi");
         XPLMDataRef quat = XPLMFindDataRef("sim/flightmodel/position/q");
         XPLMDataRef P = XPLMFindDataRef("sim/flightmodel/position/P");
@@ -30,12 +28,16 @@ namespace Calibration {
     }
     namespace Saved {
         Eigen::Vector3d pos;
+        float yaw;
         Eigen::Quaternionf rot;
         Eigen::Vector3f vel;
         Eigen::Vector3f rates;
     }
     namespace Anim {
+        int step = 0;
+        bool rotate = false;
         int millis = 0;
+        int millis_rot = 0;
         Eigen::Vector3d start_pos;
         Eigen::Quaternionf start_rot;
         Eigen::Vector3d last_pos;
@@ -43,70 +45,60 @@ namespace Calibration {
         Eigen::Vector3d dest_pos;
         Eigen::Quaternionf dest_rot;
         tweeny::tween<float> tween;
-        void CreateTween();
+        tweeny::tween<float> tween_rot;
+        void Start();
     }
-    int step = 0;
     int enabled = 0;
     bool IsEnabled() { return enabled; };
+    void Save();
+    void Restore();
 }
 
-void Calibration::Anim::CreateTween() {
-    millis = 0;
-    Eigen::Vector3f euler = QuatToEuler(Saved::rot);
-    switch (step) {
-    case -1: // Return to saved
-        dest_pos = Saved::pos;
-        dest_rot = Saved::rot;
-        break;
-    case 0: // Accelerometer - Front
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ 0, 0, euler.z() });
-        break;
-    case 1: // Accelerometer - Roll left
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ -90, 0, euler.z() });
-        break;
-    case 2: // Accelerometer - Roll right
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ 90, 0, euler.z() });
-        break;
-    case 3: // Accelerometer - Turn left
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ 0, 0, euler.z() - 90 });
-        break;
-    case 4: // Accelerometer - Turn right
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ 0, 0, euler.z() + 90 });
-        break;
-    case 5: // Accelerometer - Upside down
-        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
-        dest_rot = EulerToQuat({ 180, 0, euler.z() });
-        break;
+bool Calibration::Toggle() {
+    if (!enabled) {
+        Save();
+        Anim::last_pos = Saved::pos;
+        Anim::last_rot = Saved::rot;
+        Anim::step = 0;
+        Anim::millis_rot = 0;
+        Anim::Start();
+        enabled = 1;
+        return true;
+    } else {
+        if (Anim::step != -1) {
+            Anim::step = -1;
+            Anim::millis_rot = 0;
+            Anim::rotate = false;
+            Anim::Start();
+        }
+        return false;
     }
-    tween = tweeny::from(0.0f).to(1.0f).during(1000)
-        .via(tweeny::easing::quadraticInOutEasing());
-    start_pos = last_pos;
-    start_rot = last_rot;
+}
+
+void Calibration::ToggleRotation() {
+    if (!enabled || Anim::step == -1) { return; };
+    Anim::rotate = !Anim::rotate;
 }
 
 void Calibration::NextCalibrationStep() {
-    if (step == -1) { return; };
-    step = (step + 1) % steps.size();
-    Anim::CreateTween();
+    if (!enabled || Anim::step == -1) { return; };
+    Anim::step = (Anim::step + 1) % steps.size();
+    Anim::Start();
 };
 void Calibration::PreviousCalibrationStep() {
-    if (step == -1) { return; };
-    step = step > 0 ? step - 1 : steps.size() - 1;
-    Anim::CreateTween();
+    if (!enabled || Anim::step == -1) { return; };
+    Anim::step = Anim::step > 0 ? Anim::step - 1 : steps.size() - 1;
+    Anim::Start();
 };
 
-void Calibration::Enable() {
+void Calibration::Save() {
     // Save plane position and velocity for later
     Saved::pos = {
         XPLMGetDatad(DataRef::x),
         XPLMGetDatad(DataRef::y),
         XPLMGetDatad(DataRef::z)
     };
+    Saved::yaw = XPLMGetDataf(DataRef::yaw);
     XPLMGetDatavf(DataRef::quat, &Saved::rot.w(), 0, 1);
     XPLMGetDatavf(DataRef::quat, Saved::rot.vec().data(), 1, 3);
     Saved::vel = {
@@ -119,33 +111,70 @@ void Calibration::Enable() {
         XPLMGetDataf(DataRef::Q),
         XPLMGetDataf(DataRef::R)
     };
-    // Set up animation
-    // Position and rotation for animation
-    Anim::last_pos = Saved::pos;
-    Anim::last_rot = Saved::rot;
-    step = 0;
-    Anim::CreateTween();
-    // Disable plane physics
-    enabled = 1;
-    //XPLMSetDatavi(DataRef::physics, &enabled, 0, 1);
-    XPLMSetDataf(DataRef::vx, 0);
-    XPLMSetDataf(DataRef::vy, 0);
-    XPLMSetDataf(DataRef::vz, 0);
-    XPLMSetDataf(DataRef::P, 0);
-    XPLMSetDataf(DataRef::Q, 0);
-    XPLMSetDataf(DataRef::R, 0);
 };
 
-void Calibration::Disable() {
-    if (step != -1) {
-        step = -1;
-        Anim::CreateTween();
+void Calibration::Restore() {
+    // Restore saved position and velocity variables
+    XPLMSetDatad(DataRef::x, Saved::pos.x());
+    XPLMSetDatad(DataRef::y, Saved::pos.y());
+    XPLMSetDatad(DataRef::z, Saved::pos.z());
+    XPLMSetDataf(DataRef::vx, Saved::vel.x());
+    XPLMSetDataf(DataRef::vy, Saved::vel.y());
+    XPLMSetDataf(DataRef::vz, Saved::vel.z());
+    XPLMSetDataf(DataRef::P, Saved::rates.x());
+    XPLMSetDataf(DataRef::Q, Saved::rates.y());
+    XPLMSetDataf(DataRef::R, Saved::rates.z());
+    XPLMSetDatavf(DataRef::quat, Saved::rot.vec().data(), 1, 3);
+    XPLMSetDatavf(DataRef::quat, &Saved::rot.w(), 0, 1);
+}
+
+void Calibration::Anim::Start() {
+    millis = 0;
+    Eigen::Quaternionf base_rot = Eigen::Quaternionf(1, 0, 0, 0) *
+        Eigen::AngleAxisf(Saved::yaw * deg_to_rad, Eigen::Vector3f::UnitZ());
+    switch (step) {
+    case -1: // Return to saved
+        dest_pos = Saved::pos;
+        dest_rot = Saved::rot;
+        break;
+    case 0: // Accelerometer - Front
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot;
+        break;
+    case 1: // Accelerometer - Roll left
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot * Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitX());
+        break;
+    case 2: // Accelerometer - Roll right
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot * Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitX());
+        break;
+    case 3: // Accelerometer - Nose down
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot * Eigen::AngleAxisf(-M_PI / 2, Eigen::Vector3f::UnitY());
+        break;
+    case 4: // Accelerometer - Nose up
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot * Eigen::AngleAxisf(M_PI / 2, Eigen::Vector3f::UnitY());
+        break;
+    case 5: // Accelerometer - Upside down
+        dest_pos = Saved::pos + Eigen::Vector3d{ 0, 5, 0 };
+        dest_rot = base_rot * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX());
+        break;
     }
-};
+    tween = tweeny::from(0.0f).to(1.0f).during(1000)
+        .via(tweeny::easing::quadraticInOutEasing());
+    start_pos = last_pos;
+    start_rot = last_rot;
+}
+
 
 void Calibration::Loop(float dt) {
     using namespace Anim;
     millis += dt * 1000;
+    if (rotate) {
+        millis_rot += dt * 1000;
+    }
     float t = tween.seek(millis);
     Eigen::Vector3d curr_pos = {
         start_pos.x() + (dest_pos.x() - start_pos.x()) * double(t),
@@ -153,6 +182,10 @@ void Calibration::Loop(float dt) {
         start_pos.z() + (dest_pos.z() - start_pos.z()) * double(t),
     };
     Eigen::Quaternionf curr_rot = start_rot.slerp(t, dest_rot);
+    float angle = 2 * M_PI / 10000.0f * millis_rot;
+    Eigen::Vector3f up = { 0, 0, 1 };
+    Eigen::AngleAxisf yaw_rotate = { angle, curr_rot.conjugate() * up };
+    curr_rot = start_rot.slerp(t, dest_rot * yaw_rotate);
     XPLMSetDatad(DataRef::x, curr_pos.x());
     XPLMSetDatad(DataRef::y, curr_pos.y());
     XPLMSetDatad(DataRef::z, curr_pos.z());
@@ -168,20 +201,7 @@ void Calibration::Loop(float dt) {
     last_pos = curr_pos;
     last_rot = curr_rot;
     if (step == -1 && millis >= 1000) {
-        // Restore saved position and velocity variables
-        XPLMSetDatad(DataRef::x, Saved::pos.x());
-        XPLMSetDatad(DataRef::y, Saved::pos.y());
-        XPLMSetDatad(DataRef::z, Saved::pos.z());
-        XPLMSetDataf(DataRef::vx, Saved::vel.x());
-        XPLMSetDataf(DataRef::vy, Saved::vel.y());
-        XPLMSetDataf(DataRef::vz, Saved::vel.z());
-        XPLMSetDataf(DataRef::P, Saved::rates.x());
-        XPLMSetDataf(DataRef::Q, Saved::rates.y());
-        XPLMSetDataf(DataRef::R, Saved::rates.z());
-        XPLMSetDatavf(DataRef::quat, Saved::rot.vec().data(), 1, 3);
-        XPLMSetDatavf(DataRef::quat, &Saved::rot.w(), 0, 1);
-        // Enable plane physics
+        Restore();
         enabled = 0;
-        //XPLMSetDatavi(DataRef::physics, &enabled, 0, 1);
     }
 }

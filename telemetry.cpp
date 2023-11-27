@@ -4,8 +4,7 @@
 #include <Eigen/Geometry>
 #include <memory>
 #include <format>
-#include <cstdint>
-#include <numbers>
+#include <cmath>
 #include "telemetry.hpp"
 #include "calibration.hpp"
 #include "ui.hpp"
@@ -54,9 +53,7 @@ namespace Telemetry {
         XPLMDataRef gyro_x = XPLMFindDataRef("sim/flightmodel/position/P");
         XPLMDataRef gyro_y = XPLMFindDataRef("sim/flightmodel/position/Q");
         XPLMDataRef gyro_z = XPLMFindDataRef("sim/flightmodel/position/R");
-        XPLMDataRef roll = XPLMFindDataRef("sim/flightmodel/position/phi");
-        XPLMDataRef pitch = XPLMFindDataRef("sim/flightmodel/position/theta");
-        XPLMDataRef yaw = XPLMFindDataRef("sim/flightmodel/position/psi");
+        XPLMDataRef quat = XPLMFindDataRef("sim/flightmodel/position/q");
         XPLMDataRef baro = XPLMFindDataRef("sim/weather/barometer_current_inhg");
         XPLMDataRef temperature = XPLMFindDataRef("sim/weather/temperature_ambient_c");
         XPLMDataRef days = XPLMFindDataRef("sim/time/local_date_days");
@@ -73,7 +70,7 @@ namespace Telemetry {
     struct {
         Eigen::Vector3f accel;
         Eigen::Vector3f gyro;
-        Eigen::Vector3f orientation;
+        Eigen::Quaternionf rot;
         float pressure;
         float temperature;
         int day;
@@ -97,11 +94,8 @@ void Telemetry::UpdateState() {
         XPLMGetDataf(DataRef::gyro_y),
         XPLMGetDataf(DataRef::gyro_z)
     };
-    state.orientation = {
-        XPLMGetDataf(DataRef::roll),
-        XPLMGetDataf(DataRef::pitch),
-        XPLMGetDataf(DataRef::yaw)
-    };
+    XPLMGetDatavf(DataRef::quat, &state.rot.w(), 0, 1);
+    XPLMGetDatavf(DataRef::quat, state.rot.vec().data(), 1, 3);
     state.pressure = XPLMGetDataf(DataRef::baro);
     state.temperature = XPLMGetDataf(DataRef::temperature);
     state.day = XPLMGetDatai(DataRef::days);
@@ -130,7 +124,7 @@ void Telemetry::ProcessState() {
         msg.ins.accel = -state.accel * GRAVITY_MSS;
     } else {
         Eigen::Vector3f down = { 0, 0, -GRAVITY_MSS };
-        msg.ins.accel = EulerToQuat(-state.orientation) * down;
+        msg.ins.accel = state.rot.conjugate() * down;
     }
     msg.ins.gyro = {
         state.gyro.x() * deg_to_rad,
@@ -144,7 +138,7 @@ void Telemetry::ProcessState() {
     msg.baro.temperature = state.temperature;
     // Compass
     Eigen::Vector3f north = { 400, 0, 0 };
-    msg.mag.field = EulerToQuat(-state.orientation) * north;
+    msg.mag.field = state.rot.conjugate() * north;
     // GPS
     msg.gps.gps_week = 0xFFFF;
     msg.gps.ms_tow = 0;
@@ -158,15 +152,9 @@ void Telemetry::ProcessState() {
     msg.gps.latitude = state.latitude * decimaldeg_to_deg;
     msg.gps.longitude = state.longitude * decimaldeg_to_deg;
     msg.gps.msl_altitude = state.elevation * m_to_cm;
-    if (!Calibration::IsEnabled()) {
-        msg.gps.ned_vel_north = -state.gps_vel.z();
-        msg.gps.ned_vel_east = state.gps_vel.x();
-        msg.gps.ned_vel_down = -state.gps_vel.y();
-    } else {
-        msg.gps.ned_vel_north = 0;
-        msg.gps.ned_vel_east = 0;
-        msg.gps.ned_vel_down = 0;
-    }
+    msg.gps.ned_vel_north = -state.gps_vel.z();
+    msg.gps.ned_vel_east = state.gps_vel.x();
+    msg.gps.ned_vel_down = -state.gps_vel.y();
 
     Serial::Send(&msg, sizeof(msg));
 }
