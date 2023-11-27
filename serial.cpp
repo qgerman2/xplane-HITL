@@ -8,10 +8,11 @@
 #include "main.hpp"
 #include "serial.hpp"
 #include "ui.hpp"
+#include "remote.hpp"
 
 namespace Serial {
     serialib serial;
-    void Read();
+    int Available() { return serial.available(); };
     bool IsOpen() { return serial.isDeviceOpen(); };
     void PrintError(int code, std::string what);
 }
@@ -41,6 +42,7 @@ bool Serial::Connect(std::string port) {
     if (res == 1) {
         serial.setDTR();
         serial.clearRTS();
+        Remote::Enable();
         return true;
     } else {
         PrintError(res, "trying to connect");
@@ -52,6 +54,7 @@ void Serial::Disconnect() {
     if (IsOpen()) {
         serial.closeDevice();
         UI::OnSerialDisconnect();
+        Remote::Disable();
     }
 }
 
@@ -61,17 +64,11 @@ void Serial::Send(void *buffer, size_t bytes) {
     }
 }
 
-void Serial::Read() {
-    char data[1024];
-    int pos = 0;
-    int bytes = serial.available();
-    serial.readBytes(data, 1024);
-}
-
-void Serial::Poll() {
-    if (IsOpen()) {
-        //Read();
+bool Serial::Read(uint8_t *dest) {
+    if (serial.readBytes(dest, 1)) {
+        return true;
     }
+    return false;
 }
 
 void Serial::PrintError(int code, std::string what) {

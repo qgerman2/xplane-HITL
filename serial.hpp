@@ -11,6 +11,7 @@ namespace Serial {
     bool Connect(std::string port);
     void Disconnect();
     void Send(void *buffer, size_t bytes);
-    void Poll();
+    int Available();
+    bool Read(uint8_t *dest);
     bool IsOpen();
 }

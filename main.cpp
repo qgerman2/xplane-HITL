@@ -12,6 +12,7 @@
 #include "ui.hpp"
 #include "telemetry.hpp"
 #include "calibration.hpp"
+#include "remote.hpp"
 
 PLUGIN_API int XPluginStart(
     char *outName,
@@ -50,9 +51,9 @@ float Loop(float dt, float, int, void *) {
         Calibration::Loop(dt);
     }
     if (Serial::IsOpen()) {
+        Remote::Poll();
         Telemetry::UpdateState();
         Telemetry::ProcessState();
-        Serial::Poll();
     }
     return -1.0;
 }
