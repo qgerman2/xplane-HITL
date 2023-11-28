@@ -14,23 +14,24 @@ namespace Serial {
     serialib serial;
     int Available() { return serial.available(); };
     bool IsOpen() { return serial.isDeviceOpen(); };
-    void PrintError(int code, std::string what);
+    void Error(std::string what);
 }
 
-std::vector<std::string> Serial::GetPortsAvailable() {
+serial_ports_t Serial::GetPortsAvailable() {
     if (IsOpen()) {
         Disconnect();
     }
-    std::vector<std::string> ports_available{};
+    serial_ports_t serial_ports{};
     for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
         char device_name[64];
         sprintf(device_name, "\\\\.\\COM%d", i);
         if (serial.openDevice(device_name, BAUD_RATE) == 1) {
             serial.closeDevice();
-            ports_available.push_back(std::string(device_name));
+            serial_ports.names.emplace_back(std::string(device_name));
+            serial_ports.display_names.emplace_back(std::format({ "COM {}" }, i));
         }
     }
-    return ports_available;
+    return serial_ports;
 }
 
 bool Serial::Connect(std::string port) {
@@ -45,7 +46,6 @@ bool Serial::Connect(std::string port) {
         Remote::Enable();
         return true;
     } else {
-        PrintError(res, "trying to connect");
         return false;
     }
 }
@@ -60,18 +60,22 @@ void Serial::Disconnect() {
 
 void Serial::Send(void *buffer, size_t bytes) {
     if (IsOpen()) {
-        serial.writeBytes(buffer, bytes);
+        if (serial.writeBytes(buffer, bytes) == -1) {
+            Error("Failed to write");
+        }
     }
 }
 
 bool Serial::Read(uint8_t *dest) {
-    if (serial.readBytes(dest, 1)) {
+    if (serial.readBytes(dest, 1) >= 0) {
         return true;
+    } else {
+        Error("Failed to read");
+        return false;
     }
-    return false;
 }
 
-void Serial::PrintError(int code, std::string what) {
-    XPLMDebugString(std::format("Error {}. [{}]\n",
-        what, code).c_str());
+void Serial::Error(std::string what) {
+    XPLMDebugString(std::format("Serial error: {}.\n", what).c_str());
+    Disconnect();
 }

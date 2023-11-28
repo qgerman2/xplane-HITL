@@ -123,14 +123,12 @@ void Telemetry::ProcessState() {
     if (!Calibration::IsEnabled()) {
         msg.ins.accel = -state.accel * GRAVITY_MSS;
     } else {
+        // plane has no acceleration when frozen mid air during calibration,
+        // so here it is faked
         Eigen::Vector3f down = { 0, 0, -GRAVITY_MSS };
         msg.ins.accel = state.rot.conjugate() * down;
     }
-    msg.ins.gyro = {
-        state.gyro.x() * deg_to_rad,
-        state.gyro.y() * deg_to_rad,
-        state.gyro.z() * deg_to_rad
-    };
+    msg.ins.gyro = state.gyro * deg_to_rad;
     msg.ins.temperature = 25;
     // Barometer
     msg.baro.instance = 0;
@@ -155,6 +153,5 @@ void Telemetry::ProcessState() {
     msg.gps.ned_vel_north = -state.gps_vel.z();
     msg.gps.ned_vel_east = state.gps_vel.x();
     msg.gps.ned_vel_down = -state.gps_vel.y();
-
     Serial::Send(&msg, sizeof(msg));
 }

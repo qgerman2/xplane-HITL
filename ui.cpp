@@ -12,10 +12,14 @@
 #include "serial.hpp"
 #include "calibration.hpp"
 
+// X-Plane top menu plugin definitions
+
 namespace UI::Menu {
     XPLMMenuID id;
     void OnEvent(void *mRef, void *iRef);
 }
+
+// Main window definitions
 
 namespace UI::Window {
     XPWidgetID id;
@@ -31,7 +35,7 @@ namespace UI::Window {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
-    namespace ButtonDisconnect {
+    namespace ButtonSerialScan {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
@@ -53,7 +57,7 @@ namespace UI::Window {
     }
 }
 
-// Menu methods
+// Top menu methods
 
 void UI::Menu::Create() {
     int index = XPLMAppendMenuItem(XPLMFindPluginsMenu(), "HITL", NULL, 1);
@@ -89,13 +93,13 @@ void UI::Window::Create() {
         height - 75,
         1, "Connect", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonConnect::id, ButtonConnect::OnEvent);
-    ButtonDisconnect::id = XPCreateWidget(
+    ButtonSerialScan::id = XPCreateWidget(
         20,
         height - 80,
         width - 20,
         height - 95,
-        1, "Disconnect", 0, id, xpWidgetClass_Button);
-    XPAddWidgetCallback(ButtonDisconnect::id, ButtonDisconnect::OnEvent);
+        1, "Refresh ports", 0, id, xpWidgetClass_Button);
+    XPAddWidgetCallback(ButtonSerialScan::id, ButtonSerialScan::OnEvent);
     ButtonCalibration::id = XPCreateWidget(
         20,
         height - 110,
@@ -148,11 +152,16 @@ int UI::Window::OnEvent(
 }
 
 void UI::Window::ListPorts::UpdateSerialPorts() {
-    ports = Serial::GetPortsAvailable();
-    if (ports.empty()) {
-        ports.push_back("None");
+    serial_ports_t serial_ports = Serial::GetPortsAvailable();
+    if (serial_ports.names.empty()) {
+        serial_ports.names.push_back("None");
+        serial_ports.display_names.push_back("None");
     }
-    std::string portstring = std::accumulate(ports.begin() + 1, ports.end(), ports[0],
+    ListPorts::ports = std::move(serial_ports.names);
+    std::string portstring = std::accumulate(
+        serial_ports.display_names.begin() + 1,
+        serial_ports.display_names.end(),
+        serial_ports.display_names[0],
         [](std::string x, std::string y) {
             return x + ";" + y;
         });
@@ -165,13 +174,13 @@ int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inW
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
         if (!Serial::IsOpen()) {
-            int port = XPGetWidgetProperty(
-                UI::Window::ListPorts::id,
-                xpProperty_PopupCurrentItem,
-                NULL);
-            if (Serial::Connect(UI::Window::ListPorts::ports.at(port))) {
-                XPHideWidget(Window::ButtonConnect::id);
+            int port = XPGetWidgetProperty(ListPorts::id, xpProperty_PopupCurrentItem, NULL);
+            if (Serial::Connect(ListPorts::ports.at(port))) {
+                XPSetWidgetDescriptor(id, "Disconnect");
             }
+        } else {
+            Serial::Disconnect();
+            XPSetWidgetDescriptor(id, "Connect");
         }
         return 1;
     default:
@@ -179,20 +188,20 @@ int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inW
     }
 }
 
-int UI::Window::ButtonDisconnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
+void UI::OnSerialDisconnect() {
+    XPSetWidgetDescriptor(Window::ButtonConnect::id, "Connect");
+    UI::Window::ListPorts::UpdateSerialPorts();
+}
+
+int UI::Window::ButtonSerialScan::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
     if (inWidget != id) { return 0; }
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
-        Serial::Disconnect();
+        ListPorts::UpdateSerialPorts();
         return 1;
     default:
         return 0;
     }
-}
-
-void UI::OnSerialDisconnect() {
-    XPShowWidget(Window::ButtonConnect::id);
-    UI::Window::ListPorts::UpdateSerialPorts();
 }
 
 int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
@@ -200,9 +209,9 @@ int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
         if (Calibration::Toggle()) {
-            XPSetWidgetDescriptor(ButtonCalibration::id, "End calibration");
+            XPSetWidgetDescriptor(id, "End calibration");
         } else {
-            XPSetWidgetDescriptor(ButtonCalibration::id, "Begin calibration");
+            XPSetWidgetDescriptor(id, "Begin calibration");
         }
         return 1;
     default:
