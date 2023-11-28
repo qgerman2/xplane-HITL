@@ -51,7 +51,7 @@ float Loop(float dt, float, int, void *) {
         Calibration::Loop(dt);
     }
     if (Serial::IsOpen()) {
-        Remote::Poll();
+        Remote::Loop();
         Telemetry::UpdateState();
         Telemetry::ProcessState();
     }

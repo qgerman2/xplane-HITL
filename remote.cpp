@@ -1,5 +1,6 @@
 #include <XPLMDataAccess.h>
 #include <XPLMUtilities.h>
+#include <algorithm>
 #include "remote.hpp"
 #include "serial.hpp"
 
@@ -13,9 +14,11 @@ namespace Remote {
         XPLMDataRef pitch = XPLMFindDataRef("sim/joystick/yoke_pitch_ratio");
         XPLMDataRef yaw = XPLMFindDataRef("sim/joystick/yoke_heading_ratio");
         XPLMDataRef throttle = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_use");
+        XPLMDataRef brake = XPLMFindDataRef("sim/flightmodel/controls/parkbrake");
     }
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
+        bool armed;
         float aileron;
         float elevator;
         float rudder;
@@ -23,6 +26,8 @@ namespace Remote {
     } servo_msg;
     uint8_t buffer[sizeof(servo_msg)];
     int pos = 0;
+    bool was_armed = false;
+    void Poll();
     void Update();
 }
 
@@ -38,6 +43,10 @@ void Remote::Disable() {
     XPLMSetDatai(DataRef::override_pitch, 0);
     XPLMSetDatai(DataRef::override_yaw, 0);
     XPLMSetDatai(DataRef::override_throttle, 0);
+}
+
+void Remote::Loop() {
+    Poll();
 }
 
 void Remote::Poll() {
@@ -66,8 +75,14 @@ void Remote::Poll() {
 }
 
 void Remote::Update() {
+    if (!was_armed && servo_msg.armed) {
+        XPLMSetDataf(DataRef::brake, 0);
+    }
     XPLMSetDataf(DataRef::roll, servo_msg.aileron);
     XPLMSetDataf(DataRef::pitch, servo_msg.elevator);
     XPLMSetDataf(DataRef::yaw, servo_msg.rudder);
-    XPLMSetDatavf(DataRef::throttle, &servo_msg.throttle, 0, 1);
+    float throttle[16];
+    std::fill_n(throttle, 16, std::max(0.0f, servo_msg.throttle));
+    XPLMSetDatavf(DataRef::throttle, throttle, 0, 16);
+    was_armed = servo_msg.armed;
 }

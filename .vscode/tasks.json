@@ -13,6 +13,7 @@
                 "/DIBM=1",
                 "/DXPLM200=1",
                 "/D_WIN32_WINNT=0x0601",
+                "/DNOMINMAX",
                 "/I${workspaceFolder}\\",
                 "/I${workspaceFolder}\\XPWidgetsEx\\",
                 "/I${workspaceFolder}\\serialib\\",
