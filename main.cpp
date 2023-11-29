@@ -43,7 +43,18 @@ PLUGIN_API void XPluginDisable(void) {
 }
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inParam) {
-
+    if (inFrom == XPLM_PLUGIN_XPLANE) {
+        switch (inMsg) {
+        case XPLM_MSG_PLANE_LOADED:
+        case XPLM_MSG_AIRPORT_LOADED:
+            struct {
+                char header[4] = { 'H', 'I', 'T', 'L' };
+                int type = 1;
+            } msg;
+            Serial::Send(&msg, sizeof(msg));
+            break;
+        }
+    }
 }
 
 float Loop(float dt, float, int, void *) {

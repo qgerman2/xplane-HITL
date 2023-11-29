@@ -114,6 +114,7 @@ void Telemetry::UpdateState() {
 void Telemetry::ProcessState() {
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
+        int type = 0;
         AP::baro_data_message_t baro;
         AP::mag_data_message_t mag;
         AP::gps_data_message_t gps;

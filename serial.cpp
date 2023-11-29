@@ -44,6 +44,11 @@ bool Serial::Connect(std::string port) {
         serial.setDTR();
         serial.clearRTS();
         Remote::Enable();
+        struct {
+            char header[4] = { 'H', 'I', 'T', 'L' };
+            int type = 1;
+        } msg;
+        Send(&msg, sizeof(msg));
         return true;
     } else {
         return false;
