@@ -78,11 +78,11 @@ void Remote::Update() {
     if (!was_armed && servo_msg.armed) {
         XPLMSetDataf(DataRef::brake, 0);
     }
-    XPLMSetDataf(DataRef::roll, servo_msg.aileron);
-    XPLMSetDataf(DataRef::pitch, servo_msg.elevator);
-    XPLMSetDataf(DataRef::yaw, servo_msg.rudder);
+    XPLMSetDataf(DataRef::roll, std::clamp(servo_msg.aileron, -1.0f, 1.0f));
+    XPLMSetDataf(DataRef::pitch, std::clamp(servo_msg.elevator, -1.0f, 1.0f));
+    XPLMSetDataf(DataRef::yaw, std::clamp(servo_msg.rudder, -1.0f, 1.0f));
     float throttle[16];
-    std::fill_n(throttle, 16, std::max(0.0f, servo_msg.throttle));
+    std::fill_n(throttle, 16, std::clamp(servo_msg.throttle, 0.0f, 1.0f));
     XPLMSetDatavf(DataRef::throttle, throttle, 0, 16);
     was_armed = servo_msg.armed;
 }
