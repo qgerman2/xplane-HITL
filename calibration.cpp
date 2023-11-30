@@ -69,27 +69,31 @@ bool Calibration::Toggle() {
         enabled = 1;
         return true;
     } else {
-        if (Anim::step != -1) {
-            Anim::step = -1;
+        if (Anim::step >= 0) {
+            if (Anim::step == 0) {
+                Anim::step = -2;
+            } else if (Anim::step > 0) {
+                Anim::step = -1;
+            };
             Anim::rotate = false;
             Anim::Start();
-        }
+        };
         return false;
     }
 }
 
 void Calibration::ToggleRotation() {
-    if (!enabled || Anim::step == -1) { return; };
+    if (!enabled || Anim::step < 0) { return; };
     Anim::rotate = !Anim::rotate;
 }
 
 void Calibration::NextCalibrationStep() {
-    if (!enabled || Anim::step == -1) { return; };
+    if (!enabled || Anim::step < 0) { return; };
     Anim::step = (Anim::step + 1) % steps.size();
     Anim::Start();
 };
 void Calibration::PreviousCalibrationStep() {
-    if (!enabled || Anim::step == -1) { return; };
+    if (!enabled || Anim::step < 0) { return; };
     Anim::step = Anim::step > 0 ? Anim::step - 1 : steps.size() - 1;
     Anim::Start();
 };
@@ -119,7 +123,8 @@ void Calibration::Save() {
 void Calibration::Restore() {
     // Restore saved position and velocity variables
     XPLMSetDatad(DataRef::x, Saved::pos.x());
-    XPLMSetDatad(DataRef::y, Saved::pos.y());
+    // keep altitude from animation
+    // XPLMSetDatad(DataRef::y, Saved::pos.y());
     XPLMSetDatad(DataRef::z, Saved::pos.z());
     XPLMSetDataf(DataRef::vx, Saved::vel.x());
     XPLMSetDataf(DataRef::vy, Saved::vel.y());
@@ -137,10 +142,12 @@ void Calibration::Anim::Start() {
     Eigen::Quaternionf base_rot = Eigen::Quaternionf(1, 0, 0, 0) *
         Eigen::AngleAxisf(Saved::yaw * deg_to_rad, Eigen::Vector3f::UnitZ());
     switch (step) {
-    case -1: // Return to saved
-        dest_pos = Saved::pos;
+    case -2: // Return to saved
+        // slightly above the saved position, otherwise the landing gear gets struck
+        dest_pos = Saved::pos + Eigen::Vector3d(0.0, 0.1, 0.0);
         dest_rot = Saved::rot;
         break;
+    case -1:
     case 0: // Accelerometer - Front
         dest_pos = base_pos;
         dest_rot = base_rot;
@@ -214,9 +221,16 @@ void Calibration::Loop(float dt) {
     // update last position for next loop iteration
     last_pos = curr_pos;
     last_rot = curr_rot;
-    // end calibration if deactivation animation has finished
-    if (step == -1 && millis >= animation_time) {
-        Restore();
-        enabled = 0;
+    // end calibration
+    if (step < 0) {
+        if (millis >= animation_time) {
+            step--;
+            if (step == -3) {
+                Restore();
+                enabled = 0;
+            } else {
+                Anim::Start();
+            }
+        }
     }
 }

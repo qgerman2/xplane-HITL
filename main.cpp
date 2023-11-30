@@ -47,24 +47,21 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inPa
         switch (inMsg) {
         case XPLM_MSG_PLANE_LOADED:
         case XPLM_MSG_AIRPORT_LOADED:
-            struct {
-                char header[4] = { 'H', 'I', 'T', 'L' };
-                int type = 1;
-            } msg;
-            Serial::Send(&msg, sizeof(msg));
+            Telemetry::Reset();
             break;
         }
     }
 }
 
 float Loop(float dt, float, int, void *) {
+    // cap deltatime in case of a long freeze
+    dt = std::min(dt, 0.1f);
     if (Calibration::IsEnabled()) {
         Calibration::Loop(dt);
     }
     if (Serial::IsOpen()) {
         Remote::Loop();
-        Telemetry::UpdateState();
-        Telemetry::ProcessState();
+        Telemetry::Loop(dt);
     }
     return -1.0;
 }

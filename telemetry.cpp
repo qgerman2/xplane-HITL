@@ -79,7 +79,17 @@ namespace Telemetry {
         double longitude;
         double elevation;
         Eigen::Vector3f gps_vel;
+        uint8_t gps_fix;
     } state;
+    int reset = false;
+    float reset_timer = 0;
+    void UpdateState();
+    void ProcessState();
+}
+
+void Telemetry::Loop(float dt) {
+    UpdateState();
+    ProcessState();
 }
 
 // get raw data from xplane
@@ -108,6 +118,7 @@ void Telemetry::UpdateState() {
         XPLMGetDataf(DataRef::local_vy),
         XPLMGetDataf(DataRef::local_vz)
     };
+    state.gps_fix = 3;
 }
 
 // convert raw xplane data to ardupilot and send
@@ -141,7 +152,7 @@ void Telemetry::ProcessState() {
     // GPS
     msg.gps.gps_week = 0xFFFF;
     msg.gps.ms_tow = 0;
-    msg.gps.fix_type = 3; //OK 3D
+    msg.gps.fix_type = state.gps_fix;
     msg.gps.satellites_in_view = 10;
     msg.gps.horizontal_pos_accuracy = 1;
     msg.gps.vertical_pos_accuracy = 1;
@@ -154,5 +165,13 @@ void Telemetry::ProcessState() {
     msg.gps.ned_vel_north = -state.gps_vel.z();
     msg.gps.ned_vel_east = state.gps_vel.x();
     msg.gps.ned_vel_down = -state.gps_vel.y();
+    Serial::Send(&msg, sizeof(msg));
+}
+
+void Telemetry::Reset() {
+    struct {
+        char header[4] = { 'H', 'I', 'T', 'L' };
+        int type = 1;
+    } msg;
     Serial::Send(&msg, sizeof(msg));
 }

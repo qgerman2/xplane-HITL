@@ -18,6 +18,7 @@ namespace Remote {
     }
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
+        int type = 1;
         bool armed;
         float aileron;
         float elevator;

@@ -9,6 +9,7 @@
 #include "serial.hpp"
 #include "ui.hpp"
 #include "remote.hpp"
+#include "telemetry.hpp"
 
 namespace Serial {
     serialib serial;
@@ -44,11 +45,7 @@ bool Serial::Connect(std::string port) {
         serial.setDTR();
         serial.clearRTS();
         Remote::Enable();
-        struct {
-            char header[4] = { 'H', 'I', 'T', 'L' };
-            int type = 1;
-        } msg;
-        Send(&msg, sizeof(msg));
+        Telemetry::Reset();
         return true;
     } else {
         return false;
