@@ -5,12 +5,12 @@
 
 namespace Calibration {
     inline std::array<std::string, 6> steps = {
-        "Accelerometer - Front",
-        "Accelerometer - Roll right",
-        "Accelerometer - Roll left",
-        "Accelerometer - Turn right",
-        "Accelerometer - Turn left",
-        "Accelerometer - Upside down"
+        "Level",
+        "Roll left",
+        "Roll right",
+        "Nose down",
+        "Nose up",
+        "Back"
     };
     void NextCalibrationStep();
     void PreviousCalibrationStep();

@@ -46,6 +46,7 @@ bool Serial::Connect(std::string port) {
         serial.clearRTS();
         Remote::Enable();
         Telemetry::Reset();
+        UI::OnSerialConnect();
         return true;
     } else {
         return false;

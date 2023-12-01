@@ -123,6 +123,7 @@ void Telemetry::UpdateState() {
 
 // convert raw xplane data to ardupilot and send
 void Telemetry::ProcessState() {
+#pragma pack(push,1)
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 0;
@@ -130,7 +131,12 @@ void Telemetry::ProcessState() {
         AP::mag_data_message_t mag;
         AP::gps_data_message_t gps;
         AP::ins_data_message_t ins;
+        float q1 = state.rot.w();
+        float q2 = state.rot.x();
+        float q3 = state.rot.y();
+        float q4 = state.rot.z();
     } msg;
+#pragma pack(pop)
     // Inertial sensor
     if (!Calibration::IsEnabled()) {
         msg.ins.accel = -state.accel * GRAVITY_MSS;

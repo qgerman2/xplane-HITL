@@ -7,10 +7,12 @@
 #include <XPWidgetsEx.h>
 #include <format>
 #include <numeric>
+#include <string>
 #include "ui.hpp"
 #include "main.hpp"
 #include "serial.hpp"
 #include "calibration.hpp"
+#include "remote.hpp"
 
 // X-Plane top menu plugin definitions
 
@@ -23,8 +25,8 @@ namespace UI::Menu {
 
 namespace UI::Window {
     XPWidgetID id;
-    int width = 200;
-    int height = 200;
+    int width = 260;
+    int height = 125;
     int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     namespace ListPorts {
         XPWidgetID id;
@@ -43,6 +45,9 @@ namespace UI::Window {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
     }
+    namespace LabelCalibration {
+        XPWidgetID id;
+    }
     namespace ButtonCalibrationNextStep {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
@@ -54,6 +59,13 @@ namespace UI::Window {
     namespace ButtonCalibrationCompass {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+    }
+    namespace ButtonRemoteOverride {
+        XPWidgetID id;
+        int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+    }
+    namespace LabelRemoteArmed {
+        XPWidgetID id;
     }
 }
 
@@ -79,55 +91,104 @@ void UI::Window::Create() {
     //XPHideWidget(id);
     XPSetWidgetProperty(id, xpProperty_MainWindowHasCloseBoxes, 1);
     XPAddWidgetCallback(id, OnEvent);
+    // -- Serial Widgets --
+    XPCreateWidget(
+        10 - 2,
+        height - 20 - 2,
+        80,
+        height - 35,
+        1, "Serial", 0, id, xpWidgetClass_Caption);
     ListPorts::id = XPCreatePopup(
-        20,
-        height - 25,
-        width - 20,
-        height - 40,
+        10 + 4,
+        height - 40 + 1,
+        80 - 4,
+        height - 55 + 1,
         1, "None", id);
     ListPorts::UpdateSerialPorts();
     ButtonConnect::id = XPCreateWidget(
-        20,
+        10,
         height - 60,
-        width - 20,
+        80,
         height - 75,
         1, "Connect", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonConnect::id, ButtonConnect::OnEvent);
     ButtonSerialScan::id = XPCreateWidget(
-        20,
+        10,
         height - 80,
-        width - 20,
+        80,
         height - 95,
-        1, "Refresh ports", 0, id, xpWidgetClass_Button);
+        1, "Refresh", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonSerialScan::id, ButtonSerialScan::OnEvent);
+    // -- Calibration Widgets --
+    XPCreateWidget(
+        95 - 2,
+        height - 20 - 2,
+        165,
+        height - 35,
+        1, "Calibration", 0, id, xpWidgetClass_Caption);
     ButtonCalibration::id = XPCreateWidget(
-        20,
-        height - 110,
-        width - 20,
-        height - 125,
-        1, "Begin calibration", 0, id, xpWidgetClass_Button);
+        95,
+        height - 40,
+        165,
+        height - 55,
+        1, "Begin", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonCalibration::id, ButtonCalibration::OnEvent);
+    LabelCalibration::id = XPCreateWidget(
+        95,
+        height - 60 + 3,
+        165,
+        height - 75,
+        1, "None", 0, id, xpWidgetClass_Caption);
     ButtonCalibrationPrevStep::id = XPCreateWidget(
-        20,
-        height - 130,
-        50,
-        height - 145,
+        95,
+        height - 80,
+        95 + 30,
+        height - 95,
         1, "<<", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonCalibrationPrevStep::id, ButtonCalibrationPrevStep::OnEvent);
     ButtonCalibrationNextStep::id = XPCreateWidget(
-        width - 50,
-        height - 130,
-        width - 20,
-        height - 145,
+        165 - 30,
+        height - 80,
+        165,
+        height - 95,
         1, ">>", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonCalibrationNextStep::id, ButtonCalibrationNextStep::OnEvent);
     ButtonCalibrationCompass::id = XPCreateWidget(
-        20,
-        height - 160,
-        width - 20,
-        height - 175,
-        1, "Toggle rotation", 0, id, xpWidgetClass_Button);
+        95,
+        height - 100,
+        165,
+        height - 115,
+        1, "Rotate", 0, id, xpWidgetClass_Button);
     XPAddWidgetCallback(ButtonCalibrationCompass::id, ButtonCalibrationCompass::OnEvent);
+    // -- Remote control Widgets --
+    XPCreateWidget(
+        180 - 2,
+        height - 20 - 2,
+        250,
+        height - 35,
+        1, "Remote", 0, id, xpWidgetClass_Caption);
+    ButtonRemoteOverride::id = XPCreateWidget(
+        180,
+        height - 40,
+        195,
+        height - 55,
+        1, "", 0, id, xpWidgetClass_Button);
+    XPCreateWidget(
+        195 - 2,
+        height - 40 + 3,
+        250,
+        height - 55,
+        1, "Override", 0, id, xpWidgetClass_Caption);
+    LabelRemoteArmed::id = XPCreateWidget(
+        180 - 2,
+        height - 60 + 3,
+        250,
+        height - 75,
+        1, "None", 0, id, xpWidgetClass_Caption);
+    XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonType, xpRadioButton);
+    XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonBehavior, xpButtonBehaviorCheckBox);
+    XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonState, true);
+    XPAddWidgetCallback(ButtonRemoteOverride::id, ButtonRemoteOverride::OnEvent);
 
     int screenWidth;
     int screenHeight;
@@ -175,12 +236,9 @@ int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inW
     case xpMsg_PushButtonPressed:
         if (!Serial::IsOpen()) {
             int port = XPGetWidgetProperty(ListPorts::id, xpProperty_PopupCurrentItem, NULL);
-            if (Serial::Connect(ListPorts::ports.at(port))) {
-                XPSetWidgetDescriptor(id, "Disconnect");
-            }
+            Serial::Connect(ListPorts::ports.at(port));
         } else {
             Serial::Disconnect();
-            XPSetWidgetDescriptor(id, "Connect");
         }
         return 1;
     default:
@@ -188,9 +246,14 @@ int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inW
     }
 }
 
+void UI::OnSerialConnect() {
+    XPSetWidgetDescriptor(Window::ButtonConnect::id, "Disconnect");
+}
+
 void UI::OnSerialDisconnect() {
     XPSetWidgetDescriptor(Window::ButtonConnect::id, "Connect");
     UI::Window::ListPorts::UpdateSerialPorts();
+    UI::Window::LabelRemoteArmed::SetText("None");
 }
 
 int UI::Window::ButtonSerialScan::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
@@ -209,14 +272,17 @@ int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID
     switch (inMessage) {
     case xpMsg_PushButtonPressed:
         if (Calibration::Toggle()) {
-            XPSetWidgetDescriptor(id, "End calibration");
+            XPSetWidgetDescriptor(id, "End");
         } else {
-            XPSetWidgetDescriptor(id, "Begin calibration");
+            XPSetWidgetDescriptor(id, "Begin");
         }
         return 1;
     default:
         return 0;
     }
+}
+void UI::Window::LabelCalibration::SetText(std::string text) {
+    XPSetWidgetDescriptor(id, text.c_str());
 }
 int UI::Window::ButtonCalibrationNextStep::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
     if (inWidget != id) { return 0; }
@@ -247,4 +313,17 @@ int UI::Window::ButtonCalibrationCompass::OnEvent(XPWidgetMessage inMessage, XPW
     default:
         return 0;
     }
+}
+int UI::Window::ButtonRemoteOverride::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
+    if (inWidget != id) { return 0; }
+    switch (inMessage) {
+    case xpMsg_ButtonStateChanged:
+        Remote::SetOverride(inParam2);
+        return 1;
+    default:
+        return 0;
+    }
+}
+void UI::Window::LabelRemoteArmed::SetText(std::string text) {
+    XPSetWidgetDescriptor(id, text.c_str());
 }

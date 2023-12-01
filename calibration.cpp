@@ -10,6 +10,7 @@
 
 #include "calibration.hpp"
 #include "util.hpp"
+#include "ui.hpp"
 
 namespace Calibration {
     namespace DataRef {
@@ -179,6 +180,11 @@ void Calibration::Anim::Start() {
         .via(tweeny::easing::quadraticInOutEasing());
     start_pos = last_pos;
     start_rot = last_rot;
+    if (step >= 0) {
+        UI::Window::LabelCalibration::SetText(steps[step]);
+    } else {
+        UI::Window::LabelCalibration::SetText("None");
+    }
 }
 
 
