@@ -47,6 +47,7 @@ namespace UI::Window {
     }
     namespace LabelCalibration {
         XPWidgetID id;
+        void SetText(std::string text) { XPSetWidgetDescriptor(id, text.c_str()); };
     }
     namespace ButtonCalibrationNextStep {
         XPWidgetID id;
@@ -66,6 +67,11 @@ namespace UI::Window {
     }
     namespace LabelRemoteArmed {
         XPWidgetID id;
+        void SetText(std::string text) { XPSetWidgetDescriptor(id, text.c_str()); };
+    }
+    namespace LabelAHRSCount {
+        XPWidgetID id;
+        void SetText(std::string text) { XPSetWidgetDescriptor(id, text.c_str()); };
     }
 }
 
@@ -185,6 +191,12 @@ void UI::Window::Create() {
         250,
         height - 75,
         1, "None", 0, id, xpWidgetClass_Caption);
+    LabelAHRSCount::id = XPCreateWidget(
+        180 - 2,
+        height - 80 + 3,
+        250,
+        height - 95,
+        1, "AHRS: 0 Hz", 0, id, xpWidgetClass_Caption);
     XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonType, xpRadioButton);
     XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonBehavior, xpButtonBehaviorCheckBox);
     XPSetWidgetProperty(ButtonRemoteOverride::id, xpProperty_ButtonState, true);
@@ -254,6 +266,7 @@ void UI::OnSerialDisconnect() {
     XPSetWidgetDescriptor(Window::ButtonConnect::id, "Connect");
     UI::Window::ListPorts::UpdateSerialPorts();
     UI::Window::LabelRemoteArmed::SetText("None");
+    UI::Window::LabelAHRSCount::SetText("AHRS: 0 Hz");
 }
 
 int UI::Window::ButtonSerialScan::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
@@ -280,9 +293,6 @@ int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID
     default:
         return 0;
     }
-}
-void UI::Window::LabelCalibration::SetText(std::string text) {
-    XPSetWidgetDescriptor(id, text.c_str());
 }
 int UI::Window::ButtonCalibrationNextStep::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
     if (inWidget != id) { return 0; }
@@ -323,7 +333,4 @@ int UI::Window::ButtonRemoteOverride::OnEvent(XPWidgetMessage inMessage, XPWidge
     default:
         return 0;
     }
-}
-void UI::Window::LabelRemoteArmed::SetText(std::string text) {
-    XPSetWidgetDescriptor(id, text.c_str());
 }

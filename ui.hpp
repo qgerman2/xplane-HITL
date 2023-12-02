@@ -15,5 +15,8 @@ namespace UI {
         namespace LabelRemoteArmed {
             void SetText(std::string text);
         }
+        namespace LabelAHRSCount {
+            void SetText(std::string text);
+        }
     }
 }
