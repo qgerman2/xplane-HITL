@@ -2,9 +2,6 @@
 
 This plug-in for X-Plane enables 'Hardware-in-the-Loop' testing with an autopilot running ArduPilot with a custom firmware.
 
-![RC Plane in X-Plane 9](setup-instructions/xplane-rc.png)
-![Desk setup with RC controller](setup-instructions/setup.jpeg)
-
 ### Features
 
 - [x] Send plane state as telemetry from sensors.
@@ -27,3 +24,8 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-HITL/blob/H
 ## Building the plug-in
 
 The plug-in has been written in Visual Studio Code and compiled with the latest MSVC compiler, the tasks.json file contains the compiler parameters necessary and all dependencies are already included in the repository.
+
+## Images
+
+![RC Plane in X-Plane 9](setup-instructions/xplane-rc.png)
+![Desk setup with RC controller](setup-instructions/setup.jpeg)
