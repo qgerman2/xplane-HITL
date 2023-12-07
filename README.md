@@ -15,7 +15,7 @@ It has been tested on X-Plane 9 and X-Plane 11, both 32 and 64 bit versions are 
 
 ### 1. Download
 
-Grab the [latest release](https://github.com/qgerman2/xplane-HITL/releases) install it the ```resources/plugins``` folder of X-Plane.
+Grab the [latest release](https://github.com/qgerman2/xplane-HITL/releases) and install it in the ```resources/plugins``` folder of X-Plane.
 
 ### 2. Configure an autopilot
 
