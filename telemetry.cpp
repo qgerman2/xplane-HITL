@@ -153,7 +153,7 @@ void Telemetry::ProcessState() {
     msg.baro.pressure_pa = state.pressure * inhg_to_pa;
     msg.baro.temperature = state.temperature;
     // Compass
-    Eigen::Vector3f north = { 400, 0, 0 };
+    Eigen::Vector3f north = { 1, 0, 0 };
     msg.mag.field = state.rot.conjugate() * north;
     // GPS
     msg.gps.gps_week = 0xFFFF;
