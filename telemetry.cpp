@@ -43,6 +43,10 @@ namespace AP {
         Eigen::Vector3f gyro;
         float temperature;
     } ins_data_message_t;
+    typedef struct {
+        float differential_pressure; // Pa
+        float temperature; // degC
+    } airspeed_data_message_t;
 }
 
 namespace Telemetry {
@@ -66,6 +70,7 @@ namespace Telemetry {
         XPLMDataRef local_vz = XPLMFindDataRef("sim/flightmodel/position/local_vz");
         XPLMDataRef speed = XPLMFindDataRef("sim/flightmodel/position/groundspeed");
         XPLMDataRef airspeed = XPLMFindDataRef("sim/flightmodel/position/true_airspeed");
+        XPLMDataRef density = XPLMFindDataRef("sim/weather/rho");
     }
     struct {
         Eigen::Vector3f accel;
@@ -80,6 +85,7 @@ namespace Telemetry {
         double elevation;
         Eigen::Vector3f gps_vel;
         uint8_t gps_fix;
+        float dynamic_pressure;
     } state;
     int reset = false;
     float reset_timer = 0;
@@ -119,6 +125,7 @@ void Telemetry::UpdateState() {
         XPLMGetDataf(DataRef::local_vz)
     };
     state.gps_fix = 3;
+    state.dynamic_pressure = XPLMGetDataf(DataRef::density) * pow(XPLMGetDataf(DataRef::airspeed), 2) / 2;
 }
 
 // convert raw xplane data to ardupilot and send
@@ -131,6 +138,7 @@ void Telemetry::ProcessState() {
         AP::mag_data_message_t mag;
         AP::gps_data_message_t gps;
         AP::ins_data_message_t ins;
+        AP::airspeed_data_message_t aspd;
         float q1 = state.rot.w();
         float q2 = state.rot.x();
         float q3 = state.rot.y();
@@ -171,6 +179,9 @@ void Telemetry::ProcessState() {
     msg.gps.ned_vel_north = -state.gps_vel.z();
     msg.gps.ned_vel_east = state.gps_vel.x();
     msg.gps.ned_vel_down = -state.gps_vel.y();
+    // Airspeed
+    msg.aspd.differential_pressure = state.dynamic_pressure;
+    msg.aspd.temperature = state.temperature;
     Serial::Send(&msg, sizeof(msg));
 }
 
