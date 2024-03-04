@@ -94,7 +94,7 @@ void UI::Menu::OnEvent(void *mRef, void *iRef) {
 
 void UI::Window::Create() {
     id = XPCreateWidget(0, height, width, 0, 1, "HITL Settings", 1, 0, xpWidgetClass_MainWindow);
-    //XPHideWidget(id);
+    XPHideWidget(id);
     XPSetWidgetProperty(id, xpProperty_MainWindowHasCloseBoxes, 1);
     XPAddWidgetCallback(id, OnEvent);
     // -- Serial Widgets --
