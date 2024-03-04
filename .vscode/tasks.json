@@ -26,7 +26,7 @@
                 "${workspaceFolder}\\*.cpp",
                 "${workspaceFolder}\\XPWidgetsEx\\*.cpp",
                 "${workspaceFolder}\\serialib\\*.cpp",
-                "/Fe${workspaceFolder}\\build\\HITL\\32\\win.xpl",
+                "/Fe${workspaceFolder}\\build\\HITL\\win.xpl",
                 "/Fd${workspaceFolder}\\build\\artifacts\\32\\",
                 "/Fo${workspaceFolder}\\build\\artifacts\\32\\",
             ],
