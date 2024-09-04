@@ -28,19 +28,6 @@ namespace UI::Window {
     int width = 260;
     int height = 125;
     int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
-    namespace ListPorts {
-        XPWidgetID id;
-        std::vector<std::string> ports;
-        void UpdateSerialPorts();
-    }
-    namespace ButtonConnect {
-        XPWidgetID id;
-        int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
-    }
-    namespace ButtonSerialScan {
-        XPWidgetID id;
-        int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
-    }
     namespace ButtonCalibration {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
@@ -84,9 +71,6 @@ void UI::Menu::Create() {
 }
 
 void UI::Menu::OnEvent(void *mRef, void *iRef) {
-    if (!Serial::IsOpen()) {
-        UI::Window::ListPorts::UpdateSerialPorts();
-    }
     XPShowWidget(UI::Window::id);
 }
 
@@ -104,27 +88,6 @@ void UI::Window::Create() {
         80,
         height - 35,
         1, "Serial", 0, id, xpWidgetClass_Caption);
-    ListPorts::id = XPCreatePopup(
-        10 + 4,
-        height - 40 + 1,
-        80 - 4,
-        height - 55 + 1,
-        1, "None", id);
-    ListPorts::UpdateSerialPorts();
-    ButtonConnect::id = XPCreateWidget(
-        10,
-        height - 60,
-        80,
-        height - 75,
-        1, "Connect", 0, id, xpWidgetClass_Button);
-    XPAddWidgetCallback(ButtonConnect::id, ButtonConnect::OnEvent);
-    ButtonSerialScan::id = XPCreateWidget(
-        10,
-        height - 80,
-        80,
-        height - 95,
-        1, "Refresh", 0, id, xpWidgetClass_Button);
-    XPAddWidgetCallback(ButtonSerialScan::id, ButtonSerialScan::OnEvent);
     // -- Calibration Widgets --
     XPCreateWidget(
         95 - 2,
@@ -224,60 +187,14 @@ int UI::Window::OnEvent(
     return 0;
 }
 
-void UI::Window::ListPorts::UpdateSerialPorts() {
-    serial_ports_t serial_ports = Serial::GetPortsAvailable();
-    if (serial_ports.names.empty()) {
-        serial_ports.names.push_back("None");
-        serial_ports.display_names.push_back("None");
-    }
-    ListPorts::ports = std::move(serial_ports.names);
-    std::string portstring = std::accumulate(
-        serial_ports.display_names.begin() + 1,
-        serial_ports.display_names.end(),
-        serial_ports.display_names[0],
-        [](std::string x, std::string y) {
-            return x + ";" + y;
-        });
-    XPSetWidgetProperty(UI::Window::ListPorts::id, xpProperty_PopupCurrentItem, 0);
-    XPSetWidgetDescriptor(UI::Window::ListPorts::id, portstring.c_str());
-}
-
-int UI::Window::ButtonConnect::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
-    if (inWidget != id) { return 0; }
-    switch (inMessage) {
-    case xpMsg_PushButtonPressed:
-        if (!Serial::IsOpen()) {
-            int port = XPGetWidgetProperty(ListPorts::id, xpProperty_PopupCurrentItem, NULL);
-            Serial::Connect(ListPorts::ports.at(port));
-        } else {
-            Serial::Disconnect();
-        }
-        return 1;
-    default:
-        return 0;
-    }
-}
 
 void UI::OnSerialConnect() {
-    XPSetWidgetDescriptor(Window::ButtonConnect::id, "Disconnect");
+
 }
 
 void UI::OnSerialDisconnect() {
-    XPSetWidgetDescriptor(Window::ButtonConnect::id, "Connect");
-    UI::Window::ListPorts::UpdateSerialPorts();
     UI::Window::LabelRemoteArmed::SetText("None");
     UI::Window::LabelAHRSCount::SetText("AHRS: 0 Hz");
-}
-
-int UI::Window::ButtonSerialScan::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {
-    if (inWidget != id) { return 0; }
-    switch (inMessage) {
-    case xpMsg_PushButtonPressed:
-        ListPorts::UpdateSerialPorts();
-        return 1;
-    default:
-        return 0;
-    }
 }
 
 int UI::Window::ButtonCalibration::OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2) {

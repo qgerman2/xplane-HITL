@@ -28,6 +28,8 @@ PLUGIN_API int XPluginStart(
 
     XPLMRegisterFlightLoopCallback(Loop, -1, NULL);
 
+    Serial::Scan();
+
     return 1;
 }
 

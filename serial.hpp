@@ -12,9 +12,7 @@ struct serial_ports_t {
 };
 
 namespace Serial {
-    serial_ports_t GetPortsAvailable();
-    bool Connect(std::string port);
-    void Disconnect();
+    void Scan();
     void Send(void *buffer, size_t bytes);
     int Available();
     bool Read(uint8_t *dest);

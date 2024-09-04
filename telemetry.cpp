@@ -5,6 +5,7 @@
 #include <memory>
 #include <format>
 #include <cmath>
+#include "main.hpp"
 #include "telemetry.hpp"
 #include "calibration.hpp"
 #include "ui.hpp"
@@ -132,7 +133,6 @@ void Telemetry::UpdateState() {
 void Telemetry::ProcessState() {
 #pragma pack(push,1)
     struct {
-        char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 0;
         AP::baro_data_message_t baro;
         AP::mag_data_message_t mag;
@@ -187,7 +187,7 @@ void Telemetry::ProcessState() {
 
 void Telemetry::Reset() {
     struct {
-        char header[4] = { 'H', 'I', 'T', 'L' };
+        char header{ header };
         int type = 1;
     } msg;
     Serial::Send(&msg, sizeof(msg));

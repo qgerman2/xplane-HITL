@@ -5,72 +5,81 @@
 #include <vector>
 #include <string>
 #include <format>
+#include <thread>
+#include <optional>
 #include "main.hpp"
 #include "serial.hpp"
 #include "ui.hpp"
 #include "remote.hpp"
 #include "telemetry.hpp"
 
+#define SCAN_TIMEOUT 100
+#define SCAN_MAXBYTES 200
+
 namespace Serial {
-    serialib serial;
-    int Available() { return serial.available(); };
-    bool IsOpen() { return serial.isDeviceOpen(); };
+    std::optional<serialib> serial;
+    int Available() { return serial.has_value() ? serial->available() : 0; };
+    bool IsOpen() { return serial.has_value() ? serial->isDeviceOpen() : false; };
     void Error(std::string what);
+    void Disconnect();
+    std::thread t;
 }
 
-serial_ports_t Serial::GetPortsAvailable() {
-    if (IsOpen()) {
-        Disconnect();
-    }
-    serial_ports_t serial_ports{};
-    for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
-        char device_name[64];
-        sprintf(device_name, "\\\\.\\COM%d", i);
-        if (serial.openDevice(device_name, BAUD_RATE) == 1) {
-            serial.closeDevice();
-            serial_ports.names.emplace_back(std::string(device_name));
-            serial_ports.display_names.emplace_back(std::format({ "COM {}" }, i));
+void Serial::Scan() {
+    t = std::thread([&]() -> void {
+        while (true) {
+            if (!serial.has_value()) {
+                for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
+                    // Attempt connection
+                    serialib temp_serial;
+                    std::string device = std::format("COM{}", i);
+                    if (temp_serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; }
+                    temp_serial.setDTR();
+                    temp_serial.clearRTS();
+                    // Scan for header
+                    char c;
+                    int pos = 0;
+                    int bytes_read = 0;
+                    while (bytes_read < SCAN_MAXBYTES && temp_serial.readBytes(&c, 1, SCAN_TIMEOUT) == 1) {
+                        bytes_read++;
+                        if (c == header[pos]) { pos++; }
+                        if (pos == sizeof(header)) {
+                            // Header found, pass serial obj to main thread
+                            serial.emplace(std::move(temp_serial));
+                            Remote::Enable();
+                            Telemetry::Reset();
+                            UI::OnSerialConnect();
+                            break;
+                        }
+                    }
+                }
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-    }
-    return serial_ports;
-}
-
-bool Serial::Connect(std::string port) {
-    if (IsOpen()) {
-        Disconnect();
-    }
-    // baud 115200, 8N1
-    int res = serial.openDevice(port.c_str(), 115200);
-    if (res == 1) {
-        serial.setDTR();
-        serial.clearRTS();
-        Remote::Enable();
-        Telemetry::Reset();
-        UI::OnSerialConnect();
-        return true;
-    } else {
-        return false;
-    }
+        });
 }
 
 void Serial::Disconnect() {
     if (IsOpen()) {
-        serial.closeDevice();
+        serial->closeDevice();
         UI::OnSerialDisconnect();
         Remote::Disable();
+    }
+    if (serial.has_value()) {
+        serial.reset();
     }
 }
 
 void Serial::Send(void *buffer, size_t bytes) {
     if (IsOpen()) {
-        if (serial.writeBytes(buffer, bytes) == -1) {
+        if (serial->writeBytes(buffer, bytes) == -1) {
             Error("Failed to write");
         }
     }
 }
 
 bool Serial::Read(uint8_t *dest) {
-    if (serial.readBytes(dest, 1) >= 0) {
+    if (IsOpen() && serial->readBytes(dest, 1) >= 0) {
         return true;
     } else {
         Error("Failed to read");
