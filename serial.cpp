@@ -42,13 +42,14 @@ void Serial::Scan() {
                     int bytes_read = 0;
                     while (bytes_read < SCAN_MAXBYTES && temp_serial.readBytes(&c, 1, SCAN_TIMEOUT) == 1) {
                         bytes_read++;
-                        if (c == header[pos]) { pos++; }
+                        if (c == header[pos]) { pos++; } else { pos = 0; };
                         if (pos == sizeof(header)) {
                             // Header found, pass serial obj to main thread
                             serial.emplace(std::move(temp_serial));
                             Remote::Enable();
                             Telemetry::Reset();
                             UI::OnSerialConnect();
+                            i = MAX_SERIAL_PORTS;
                             break;
                         }
                     }
