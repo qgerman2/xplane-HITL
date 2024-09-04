@@ -17,22 +17,24 @@
 #define SCAN_MAXBYTES 200
 
 namespace Serial {
-    std::optional<serialib> serial;
-    int Available() { return serial.has_value() ? serial->available() : 0; };
-    bool IsOpen() { return serial.has_value() ? serial->isDeviceOpen() : false; };
+    serialib serial;
+    int Available() { return serial.available(); };
+    bool IsOpen() { return serial.isDeviceOpen(); };
     void Error(std::string what);
     void Disconnect();
     std::thread t;
+    char ping_msg[] = "HITLPINGHITLPINGHITLPING";
 }
 
 void Serial::Scan() {
     t = std::thread([&]() -> void {
         while (true) {
-            if (!serial.has_value()) {
+            if (!serial.isDeviceOpen()) {
+                XPLMDebugString("start scan\n");
                 for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
                     // Attempt connection
                     serialib temp_serial;
-                    std::string device = std::format("COM{}", i);
+                    std::string device = std::format("\\\\.\\COM{}", i);
                     if (temp_serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; }
                     temp_serial.setDTR();
                     temp_serial.clearRTS();
@@ -42,12 +44,14 @@ void Serial::Scan() {
                     int bytes_read = 0;
                     while (bytes_read < SCAN_MAXBYTES && temp_serial.readBytes(&c, 1, SCAN_TIMEOUT) == 1) {
                         bytes_read++;
-                        if (c == header[pos]) { pos++; } else { pos = 0; };
-                        if (pos == sizeof(header)) {
-                            // Header found, pass serial obj to main thread
-                            serial.emplace(std::move(temp_serial));
+                        if (c == ping_msg[pos]) { pos++; } else { pos = 0; };
+                        if (pos == sizeof(ping_msg)) {
+                            // Header found, open the main serial obj
+                            temp_serial.closeDevice();
+                            if (serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; };
+                            serial.setDTR();
+                            serial.clearRTS();
                             Remote::Enable();
-                            Telemetry::Reset();
                             UI::OnSerialConnect();
                             i = MAX_SERIAL_PORTS;
                             break;
@@ -62,25 +66,22 @@ void Serial::Scan() {
 
 void Serial::Disconnect() {
     if (IsOpen()) {
-        serial->closeDevice();
+        serial.closeDevice();
         UI::OnSerialDisconnect();
         Remote::Disable();
-    }
-    if (serial.has_value()) {
-        serial.reset();
     }
 }
 
 void Serial::Send(void *buffer, size_t bytes) {
     if (IsOpen()) {
-        if (serial->writeBytes(buffer, bytes) == -1) {
+        if (serial.writeBytes(buffer, bytes) == -1) {
             Error("Failed to write");
         }
     }
 }
 
 bool Serial::Read(uint8_t *dest) {
-    if (IsOpen() && serial->readBytes(dest, 1) >= 0) {
+    if (IsOpen() && serial.readBytes(dest, 1) >= 0) {
         return true;
     } else {
         Error("Failed to read");

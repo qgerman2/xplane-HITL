@@ -94,7 +94,7 @@ namespace Telemetry {
     void ProcessState();
 }
 
-void Telemetry::Loop(float dt) {
+void Telemetry::Send() {
     UpdateState();
     ProcessState();
 }
@@ -133,6 +133,7 @@ void Telemetry::UpdateState() {
 void Telemetry::ProcessState() {
 #pragma pack(push,1)
     struct {
+        char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 0;
         AP::baro_data_message_t baro;
         AP::mag_data_message_t mag;
@@ -183,11 +184,11 @@ void Telemetry::ProcessState() {
     msg.aspd.differential_pressure = state.dynamic_pressure;
     msg.aspd.temperature = state.temperature;
     Serial::Send(&msg, sizeof(msg));
+    XPLMDebugString("sent ahrs\n");
 }
 
-void Telemetry::Reset() {
+void Telemetry::RestartArdupilot() {
     struct {
-        char header{ header };
         int type = 1;
     } msg;
     Serial::Send(&msg, sizeof(msg));

@@ -49,7 +49,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inPa
         switch (inMsg) {
         case XPLM_MSG_PLANE_LOADED:
         case XPLM_MSG_AIRPORT_LOADED:
-            Telemetry::Reset();
+            Telemetry::RestartArdupilot();
             break;
         }
     }
@@ -62,8 +62,8 @@ float Loop(float dt, float, int, void *) {
         Calibration::Loop(dt);
     }
     if (Serial::IsOpen()) {
-        Remote::Loop();
-        Telemetry::Loop(dt);
+        Remote::Receive();
+        Telemetry::Send();
     }
     return -1.0;
 }

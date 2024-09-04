@@ -34,7 +34,6 @@ namespace Remote {
 
     int state = -1;
     bool override_joy = true;
-    void Poll();
     void Update();
 }
 
@@ -69,11 +68,7 @@ void Remote::SetOverride(bool state) {
     }
 }
 
-void Remote::Loop() {
-    Poll();
-}
-
-void Remote::Poll() {
+void Remote::Receive() {
     int nbytes = Serial::Available();
     while (nbytes-- > 0) {
         // read a single byte into the buffer
@@ -99,6 +94,7 @@ void Remote::Poll() {
 }
 
 void Remote::Update() {
+    if (servo_msg.type != 1) { return; }
     if (state != static_cast<int>(servo_msg.state)) {
         switch (servo_msg.state) {
         case 0:
