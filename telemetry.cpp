@@ -184,7 +184,6 @@ void Telemetry::ProcessState() {
     msg.aspd.differential_pressure = state.dynamic_pressure;
     msg.aspd.temperature = state.temperature;
     Serial::Send(&msg, sizeof(msg));
-    XPLMDebugString("sent ahrs\n");
 }
 
 void Telemetry::RestartArdupilot() {

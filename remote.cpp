@@ -22,10 +22,7 @@ namespace Remote {
         char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 1;
         int state;
-        float aileron;
-        float elevator;
-        float rudder;
-        float throttle;
+        float ch[8];
         uint8_t count;
     } servo_msg;
 
@@ -94,31 +91,17 @@ void Remote::Receive() {
 }
 
 void Remote::Update() {
-    if (servo_msg.type != 1) { return; }
+    //if (servo_msg.type != 1) { return; }
     if (state != static_cast<int>(servo_msg.state)) {
-        switch (servo_msg.state) {
-        case 0:
-            UI::Window::LabelRemoteArmed::SetText("Unarmed");
-            break;
-        case 1:
-            if (state == 0) { XPLMSetDataf(DataRef::brake, 0); };
-            UI::Window::LabelRemoteArmed::SetText("Armed");
-            break;
-        case 2:
-        case 3:
-        case 4:
-            UI::Window::LabelRemoteArmed::SetText(std::format("Resetting ({}/3)", servo_msg.state - 1));
-            break;
-        }
         state = servo_msg.state;
     }
     UI::Window::LabelAHRSCount::SetText(std::format("AHRS: {} Hz", servo_msg.count));
     if (override_joy) {
-        XPLMSetDataf(DataRef::roll, std::clamp(servo_msg.aileron, -1.0f, 1.0f));
-        XPLMSetDataf(DataRef::pitch, std::clamp(servo_msg.elevator, -1.0f, 1.0f));
-        XPLMSetDataf(DataRef::yaw, std::clamp(servo_msg.rudder, -1.0f, 1.0f));
+        XPLMSetDataf(DataRef::roll, std::clamp(servo_msg.ch[0], -1.0f, 1.0f));
+        XPLMSetDataf(DataRef::pitch, std::clamp(servo_msg.ch[1], -1.0f, 1.0f));
+        XPLMSetDataf(DataRef::yaw, std::clamp(servo_msg.ch[3], -1.0f, 1.0f));
         float throttle[16];
-        std::fill_n(throttle, 16, std::clamp(servo_msg.throttle, 0.0f, 1.0f));
+        std::fill_n(throttle, 16, std::clamp(servo_msg.ch[2], 0.0f, 1.0f));
         XPLMSetDatavf(DataRef::throttle, throttle, 0, 16);
     }
 }
