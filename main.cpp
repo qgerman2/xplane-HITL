@@ -27,14 +27,11 @@ PLUGIN_API int XPluginStart(
     UI::Window::Create();
 
     XPLMRegisterFlightLoopCallback(Loop, -1, NULL);
-
-    Serial::Scan();
-
     return 1;
 }
 
 PLUGIN_API void	XPluginStop(void) {
-
+    Serial::StopScan();
 }
 
 PLUGIN_API int XPluginEnable(void) {
@@ -42,6 +39,7 @@ PLUGIN_API int XPluginEnable(void) {
 }
 
 PLUGIN_API void XPluginDisable(void) {
+    Serial::StopScan();
 }
 
 PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inParam) {
@@ -64,6 +62,8 @@ float Loop(float dt, float, int, void *) {
     if (Serial::IsOpen()) {
         Remote::Receive();
         Telemetry::Send();
+    } else {
+        Serial::Scan();
     }
     return -1.0;
 }

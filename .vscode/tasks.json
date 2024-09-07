@@ -1,88 +1,85 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-        {
-            "type": "cppbuild",
-            "label": "C/C++: cl.exe compilar X-Plane 9 32-bit",
-            "command": "cl.exe",
-            // ** Argumentos para el compilador **
-            "args": [
-                "/std:c++20",
-                "/EHsc",
-                "/LD",
-                "/DIBM=1",
-                "/DXPLM200=1",
-                "/D_WIN32_WINNT=0x0601",
-                "/DNOMINMAX",
-                "/I${workspaceFolder}\\",
-                "/I${workspaceFolder}\\XPWidgetsEx\\",
-                "/I${workspaceFolder}\\serialib\\",
-                "/I${workspaceFolder}\\tweeny\\",
-                "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
-                "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
-                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM.lib",
-                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPWidgets.lib",
-                "OpenGL32.lib",
-                "${workspaceFolder}\\*.cpp",
-                "${workspaceFolder}\\XPWidgetsEx\\*.cpp",
-                "${workspaceFolder}\\serialib\\*.cpp",
-                "/Fe${workspaceFolder}\\build\\HITL\\win.xpl",
-                "/Fd${workspaceFolder}\\build\\artifacts\\32\\",
-                "/Fo${workspaceFolder}\\build\\artifacts\\32\\",
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "detail": "compilador: cl.exe"
-        },
-        {
-            "type": "cppbuild",
-            "label": "C/C++: cl.exe compilar X-Plane 10+ 64-bit",
-            "command": "cl.exe",
-            // ** Argumentos para el compilador **
-            "args": [
-                "/std:c++20",
-                "/EHsc",
-                "/LD",
-                "/DIBM=1",
-                "/DXPLM200=1",
-                "/DXPLM210=1",
-                "/D_WIN32_WINNT=0x0601",
-                "/DNOMINMAX",
-                "/I${workspaceFolder}\\",
-                "/I${workspaceFolder}\\XPWidgetsEx\\",
-                "/I${workspaceFolder}\\serialib\\",
-                "/I${workspaceFolder}\\tweeny\\",
-                "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
-                "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
-                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM_64.lib",
-                "${workspaceFolder}\\SDK\\Libraries\\Win\\XPWidgets_64.lib",
-                "OpenGL32.lib",
-                "${workspaceFolder}\\*.cpp",
-                "${workspaceFolder}\\XPWidgetsEx\\*.cpp",
-                "${workspaceFolder}\\serialib\\*.cpp",
-                "/Fe${workspaceFolder}\\build\\HITL\\64\\win.xpl",
-                "/Fd${workspaceFolder}\\build\\artifacts\\64\\",
-                "/Fo${workspaceFolder}\\build\\artifacts\\64\\",
-            ],
-            "options": {
-                "cwd": "${fileDirname}"
-            },
-            "problemMatcher": [
-                "$msCompile"
-            ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "detail": "compilador: cl.exe"
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "cppbuild",
+      "label": "C/C++: cl.exe compilar X-Plane 9 32-bit",
+      "command": "cl.exe",
+      // ** Argumentos para el compilador **
+      "args": [
+        "/std:c++20",
+        "/EHsc",
+        "/LD",
+        "/DIBM=1",
+        "/DXPLM200=1",
+        "/D_WIN32_WINNT=0x0601",
+        "/DNOMINMAX",
+        "/I${workspaceFolder}\\",
+        "/I${workspaceFolder}\\XPWidgetsEx\\",
+        "/I${workspaceFolder}\\serialib\\",
+        "/I${workspaceFolder}\\tweeny\\",
+        "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
+        "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
+        "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM.lib",
+        "${workspaceFolder}\\SDK\\Libraries\\Win\\XPWidgets.lib",
+        "OpenGL32.lib",
+        "${workspaceFolder}\\*.cpp",
+        "${workspaceFolder}\\XPWidgetsEx\\*.cpp",
+        "${workspaceFolder}\\serialib\\*.cpp",
+        "/Fe${workspaceFolder}\\build\\HITL\\win.xpl",
+        "/Fd${workspaceFolder}\\build\\artifacts\\32\\",
+        "/Fo${workspaceFolder}\\build\\artifacts\\32\\"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": {
+        "kind": "build",
+        "isDefault": false
+      },
+      "detail": "compilador: cl.exe"
+    },
+    {
+      "type": "cppbuild",
+      "label": "C/C++: cl.exe compilar X-Plane 10+ 64-bit",
+      "command": "cl.exe",
+      // ** Argumentos para el compilador **
+      "args": [
+        "/std:c++20",
+        "/EHsc",
+        "/LD",
+        "/DIBM=1",
+        "/DXPLM200=1",
+        "/DXPLM210=1",
+        "/D_WIN32_WINNT=0x0601",
+        "/DNOMINMAX",
+        "/I${workspaceFolder}\\",
+        "/I${workspaceFolder}\\XPWidgetsEx\\",
+        "/I${workspaceFolder}\\serialib\\",
+        "/I${workspaceFolder}\\tweeny\\",
+        "/I${workspaceFolder}\\SDK\\CHeaders\\XPLM\\",
+        "/I${workspaceFolder}\\SDK\\CHeaders\\Widgets\\",
+        "/I${workspaceFolder}\\asio\\",
+        "${workspaceFolder}\\SDK\\Libraries\\Win\\XPLM_64.lib",
+        "${workspaceFolder}\\SDK\\Libraries\\Win\\XPWidgets_64.lib",
+        "OpenGL32.lib",
+        "${workspaceFolder}\\*.cpp",
+        "${workspaceFolder}\\XPWidgetsEx\\*.cpp",
+        "${workspaceFolder}\\serialib\\*.cpp",
+        "/Fe${workspaceFolder}\\build\\HITL\\64\\win.xpl",
+        "/Fd${workspaceFolder}\\build\\artifacts\\64\\",
+        "/Fo${workspaceFolder}\\build\\artifacts\\64\\"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": ["$msCompile"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "compilador: cl.exe"
+    }
+  ]
 }

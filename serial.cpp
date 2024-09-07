@@ -2,6 +2,7 @@
 #include <XPLMUtilities.h>
 #include <cstdint>
 #include <thread>
+#include <future>
 #include <vector>
 #include <string>
 #include <format>
@@ -22,46 +23,58 @@ namespace Serial {
     bool IsOpen() { return serial.isDeviceOpen(); };
     void Error(std::string what);
     void Disconnect();
-    std::thread t;
     char ping_msg[] = "HITLPINGHITLPINGHITLPING";
+    std::stop_source stop_scan;
+    std::future<std::optional<std::string>> port_future;
+}
+
+void Serial::StopScan() {
+    if (!stop_scan.stop_possible()) { return; }
+    stop_scan.request_stop();
+
 }
 
 void Serial::Scan() {
-    t = std::thread([&]() -> void {
-        while (true) {
-            if (!serial.isDeviceOpen()) {
-                XPLMDebugString("start scan\n");
-                for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
-                    // Attempt connection
-                    serialib temp_serial;
-                    std::string device = std::format("\\\\.\\COM{}", i);
-                    if (temp_serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; }
-                    temp_serial.setDTR();
-                    temp_serial.clearRTS();
-                    // Scan for header
-                    char c;
-                    int pos = 0;
-                    int bytes_read = 0;
-                    while (bytes_read < SCAN_MAXBYTES && temp_serial.readBytes(&c, 1, SCAN_TIMEOUT) == 1) {
-                        bytes_read++;
-                        if (c == ping_msg[pos]) { pos++; } else { pos = 0; };
-                        if (pos == sizeof(ping_msg)) {
-                            // Header found, open the main serial obj
-                            temp_serial.closeDevice();
-                            if (serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; };
-                            serial.setDTR();
-                            serial.clearRTS();
-                            Remote::Enable();
-                            UI::OnSerialConnect();
-                            i = MAX_SERIAL_PORTS;
-                            break;
+    if (!port_future.valid()) {
+        stop_scan = std::stop_source{};
+        port_future = std::async(std::launch::async,
+            []() -> std::optional<std::string> {
+                while (true) {
+                    if (stop_scan.stop_requested()) { return std::optional<std::string>(); }
+                    for (int i = 1; i < MAX_SERIAL_PORTS; i++) {
+                        // Attempt connection
+                        serialib temp_serial;
+                        std::string device = std::format("\\\\.\\COM{}", i);
+                        if (temp_serial.openDevice(device.c_str(), BAUD_RATE) != 1) { continue; }
+                        temp_serial.setDTR();
+                        temp_serial.clearRTS();
+                        // Scan for header
+                        char c;
+                        int pos = 0;
+                        int bytes_read = 0;
+                        while (bytes_read < SCAN_MAXBYTES && temp_serial.readBytes(&c, 1, SCAN_TIMEOUT) == 1) {
+                            bytes_read++;
+                            if (c == ping_msg[pos]) { pos++; } else { pos = 0; };
+                            if (pos == sizeof(ping_msg)) {
+                                // Header found, return device name
+                                temp_serial.closeDevice();
+                                return std::optional<std::string>(device);
+                            }
                         }
                     }
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
-            }
-            std::this_thread::sleep_for(std::chrono::seconds(1));
-        }
-        });
+            });
+    }
+    if (!port_future.valid()) { return; }
+    if (port_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) { return; }
+    std::optional<std::string> port = port_future.get();
+    if (port.has_value()) {
+        serial.openDevice(port.value().c_str(), BAUD_RATE);
+        serial.setDTR();
+        serial.clearRTS();
+        XPLMDebugString(std::format("HITL: Connected to {}", port.value()).c_str());
+    }
 }
 
 void Serial::Disconnect() {
