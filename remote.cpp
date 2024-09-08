@@ -23,6 +23,9 @@ namespace Remote {
         XPLMDataRef max_prop_pitch = XPLMFindDataRef("sim/aircraft/prop/acf_max_pitch");
         XPLMDataRef min_prop_pitch = XPLMFindDataRef("sim/aircraft/prop/acf_min_pitch");
     }
+    namespace Commands {
+        XPLMCommandRef starter = XPLMFindCommand("sim/engines/engage_starters");
+    }
 
     struct {
         char preamble[4] = { 'H', 'I', 'T', 'L' };
@@ -39,6 +42,7 @@ namespace Remote {
     struct {
         uint8_t state;
         uint32_t ahrs_count;
+        uint16_t starter;
     } state_msg;
 
     struct {
@@ -72,6 +76,8 @@ namespace Remote {
     float min_tail = 0;
 
     std::pair pwm(1100.0f, 1900.0f);
+
+    bool starting = false;
 
     int state = -1;
     bool override_joy = true;
@@ -153,6 +159,7 @@ void Remote::Receive() {
 }
 
 void Remote::OnState() {
+    // armed ui text
     std::string armed = "";
     switch (state_msg.state) {
     case 0:
@@ -165,6 +172,8 @@ void Remote::OnState() {
         armed = "Armed";
         break;
     }
+    UI::Window::LabelRemoteArmed::SetText(armed.c_str());
+    // park brake when unarmed
     if (override_joy) {
         if (state_msg.state == 2) {
             XPLMSetDataf(DataRef::brake, 0);
@@ -172,8 +181,30 @@ void Remote::OnState() {
             XPLMSetDataf(DataRef::brake, 1);
         }
     }
-    UI::Window::LabelRemoteArmed::SetText(armed.c_str());
+    // ignition
+    if (state_msg.starter > 1500) {
+        if (override_joy) {
+            StartIgnition();
+        }
+    } else {
+        StopIgnition();
+    }
+    // packet rate
     UI::Window::LabelAHRSCount::SetText(std::format("AHRS: {} Hz", state_msg.ahrs_count));
+}
+
+void Remote::StartIgnition() {
+    if (!starting) {
+        XPLMCommandBegin(Commands::starter);
+        starting = true;
+    }
+}
+
+void Remote::StopIgnition() {
+    if (starting) {
+        XPLMCommandEnd(Commands::starter);
+        starting = false;
+    }
 }
 
 void Remote::OnPlane() {

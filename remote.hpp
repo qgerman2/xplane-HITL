@@ -5,6 +5,8 @@ namespace Remote {
     void SetOverride(bool state);
     void Receive();
     void UpdateDataRefs();
+    void StartIgnition();
+    void StopIgnition();
 }
 
 // https://rosettacode.org/wiki/Map_range#C++
