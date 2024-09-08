@@ -188,6 +188,7 @@ void Telemetry::ProcessState() {
 
 void Telemetry::RestartArdupilot() {
     struct {
+        char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 1;
     } msg;
     Serial::Send(&msg, sizeof(msg));

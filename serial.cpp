@@ -23,7 +23,7 @@ namespace Serial {
     bool IsOpen() { return serial.isDeviceOpen(); };
     void Error(std::string what);
     void Disconnect();
-    char ping_msg[] = "HITLPINGHITLPINGHITLPING";
+    char ping_msg[] = "PINGHITLPINGHITLPING";
     std::stop_source stop_scan;
     std::future<std::optional<std::string>> port_future;
 }
