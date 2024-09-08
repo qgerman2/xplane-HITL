@@ -42,18 +42,18 @@ namespace Remote {
     } state_msg;
 
     struct {
-        float roll;
-        float pitch;
-        float yaw;
-        float throttle;
+        uint16_t roll;
+        uint16_t pitch;
+        uint16_t yaw;
+        uint16_t throttle;
     } plane_msg;
 
     struct {
-        float roll_cyclic;
-        float pitch_cyclic;
-        float collective;
-        float tail;
-        float throttle;
+        uint16_t roll_cyclic;
+        uint16_t pitch_cyclic;
+        uint16_t collective;
+        uint16_t tail;
+        uint16_t throttle;
     } heli_msg;
 
     size_t msg_size[4]{
@@ -70,6 +70,8 @@ namespace Remote {
     float min_collective = 0;
     float max_tail = 0;
     float min_tail = 0;
+
+    std::pair pwm(1100.0f, 1900.0f);
 
     int state = -1;
     bool override_joy = true;
@@ -176,25 +178,26 @@ void Remote::OnState() {
 
 void Remote::OnPlane() {
     if (override_joy) {
-        XPLMSetDataf(DataRef::roll, plane_msg.roll);
-        XPLMSetDataf(DataRef::pitch, plane_msg.pitch);
-        XPLMSetDataf(DataRef::yaw, plane_msg.yaw);
-        float throttle[8]; std::fill_n(throttle, 8, plane_msg.throttle);
+        XPLMSetDataf(DataRef::roll, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.roll)));
+        XPLMSetDataf(DataRef::pitch, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.pitch)));
+        XPLMSetDataf(DataRef::yaw, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.yaw)));
+        float throttle[8]; std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(plane_msg.throttle)));
         XPLMSetDatavf(DataRef::throttle, &throttle[0], 0, 8);
     }
 }
 
 void Remote::OnHeli() {
     if (override_joy) {
-        XPLMSetDataf(DataRef::roll, heli_msg.roll_cyclic);
-        XPLMSetDataf(DataRef::pitch, heli_msg.pitch_cyclic);
+        XPLMSetDataf(DataRef::roll, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(heli_msg.roll_cyclic)));
+        XPLMSetDataf(DataRef::pitch, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(heli_msg.pitch_cyclic)));
 
-        float collective = map_value(std::pair(-1.0f, 1.0f), std::pair(min_collective, max_collective), heli_msg.collective);
-        float tail = map_value(std::pair(-1.0f, 1.0f), std::pair(min_tail, max_tail), heli_msg.tail);
+        float collective = map_value(pwm, std::pair(min_collective, max_collective), static_cast<float>(heli_msg.collective));
+        float tail = map_value(pwm, std::pair(min_tail, max_tail), static_cast<float>(heli_msg.tail));
 
         XPLMSetDatavf(DataRef::prop_pitch, &collective, 0, 1);
         XPLMSetDatavf(DataRef::prop_pitch, &tail, 1, 1);
-        float throttle[8]; std::fill_n(throttle, 8, heli_msg.throttle);
+
+        float throttle[8]; std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(heli_msg.throttle)));
         XPLMSetDatavf(DataRef::throttle, &throttle[0], 0, 8);
     }
 }
