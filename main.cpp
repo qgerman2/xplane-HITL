@@ -31,6 +31,7 @@ PLUGIN_API int XPluginStart(
 }
 
 PLUGIN_API void	XPluginStop(void) {
+    Serial::Disconnect();
     Serial::StopScan();
 }
 
@@ -39,6 +40,7 @@ PLUGIN_API int XPluginEnable(void) {
 }
 
 PLUGIN_API void XPluginDisable(void) {
+    Serial::Disconnect();
     Serial::StopScan();
 }
 
@@ -48,6 +50,7 @@ PLUGIN_API void XPluginReceiveMessage(XPLMPluginID inFrom, int inMsg, void *inPa
         case XPLM_MSG_PLANE_LOADED:
         case XPLM_MSG_AIRPORT_LOADED:
             Telemetry::RestartArdupilot();
+            Serial::Disconnect();
             break;
         }
     }

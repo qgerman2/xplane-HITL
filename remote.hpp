@@ -2,10 +2,9 @@
 #include <utility>
 
 namespace Remote {
-    void Enable();
-    void Disable();
     void SetOverride(bool state);
     void Receive();
+    void UpdateDataRefs();
 }
 
 // https://rosettacode.org/wiki/Map_range#C++

@@ -28,6 +28,10 @@ namespace UI::Window {
     int width = 260;
     int height = 125;
     int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
+    namespace LabelSerialPort {
+        XPWidgetID id;
+        void SetText(std::string text) { XPSetWidgetDescriptor(id, text.c_str()); };
+    }
     namespace ButtonCalibration {
         XPWidgetID id;
         int OnEvent(XPWidgetMessage inMessage, XPWidgetID inWidget, intptr_t inParam1, intptr_t inParam2);
@@ -88,6 +92,12 @@ void UI::Window::Create() {
         80,
         height - 35,
         1, "Serial", 0, id, xpWidgetClass_Caption);
+    LabelSerialPort::id = XPCreateWidget(
+        10 - 2,
+        height - 40,
+        80,
+        height - 55,
+        1, "Disconnect", 0, id, xpWidgetClass_Caption);
     // -- Calibration Widgets --
     XPCreateWidget(
         95 - 2,
@@ -188,11 +198,12 @@ int UI::Window::OnEvent(
 }
 
 
-void UI::OnSerialConnect() {
-
+void UI::OnSerialConnect(std::string port) {
+    UI::Window::LabelSerialPort::SetText(port.c_str());
 }
 
 void UI::OnSerialDisconnect() {
+    UI::Window::LabelSerialPort::SetText("Disconnected");
     UI::Window::LabelRemoteArmed::SetText("None");
     UI::Window::LabelAHRSCount::SetText("AHRS: 0 Hz");
 }

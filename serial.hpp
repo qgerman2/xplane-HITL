@@ -16,6 +16,7 @@ struct serial_ports_t {
 namespace Serial {
     void Send(void *buffer, size_t bytes);
     int Available();
+    void Disconnect();
     bool Read(uint8_t *dest);
     bool IsOpen();
     void Scan();

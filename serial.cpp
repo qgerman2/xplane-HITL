@@ -22,7 +22,7 @@ namespace Serial {
     int Available() { return serial.available(); };
     bool IsOpen() { return serial.isDeviceOpen(); };
     void Error(std::string what);
-    void Disconnect();
+    void Connect(std::string port);
     char ping_msg[] = "PINGHITLPINGHITLPING";
     std::stop_source stop_scan;
     std::future<std::optional<std::string>> port_future;
@@ -70,19 +70,25 @@ void Serial::Scan() {
     if (port_future.wait_for(std::chrono::seconds(0)) != std::future_status::ready) { return; }
     std::optional<std::string> port = port_future.get();
     if (port.has_value()) {
-        serial.openDevice(port.value().c_str(), BAUD_RATE);
-        serial.setDTR();
-        serial.clearRTS();
-        XPLMDebugString(std::format("HITL: Connected to {}\n", port.value()).c_str());
+        Connect(port.value());
     }
 }
 
+void Serial::Connect(std::string port) {
+    if (serial.openDevice(port.c_str(), BAUD_RATE) != 1) { return; };
+    serial.setDTR();
+    serial.clearRTS();
+    XPLMDebugString(std::format("HITL: Connected to {}\n", port).c_str());
+    Remote::UpdateDataRefs();
+    UI::OnSerialConnect(port);
+}
+
 void Serial::Disconnect() {
-    serial.closeDevice();
     if (IsOpen()) {
+        serial.closeDevice();
         UI::OnSerialDisconnect();
-        Remote::Disable();
     }
+    Remote::UpdateDataRefs();
 }
 
 void Serial::Send(void *buffer, size_t bytes) {
