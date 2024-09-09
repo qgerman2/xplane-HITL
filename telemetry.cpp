@@ -5,6 +5,7 @@
 #include <memory>
 #include <format>
 #include <cmath>
+#include <numbers>
 #include "main.hpp"
 #include "telemetry.hpp"
 #include "calibration.hpp"
@@ -72,6 +73,11 @@ namespace Telemetry {
         XPLMDataRef speed = XPLMFindDataRef("sim/flightmodel/position/groundspeed");
         XPLMDataRef airspeed = XPLMFindDataRef("sim/flightmodel/position/true_airspeed");
         XPLMDataRef density = XPLMFindDataRef("sim/weather/rho");
+        XPLMDataRef engine_running = XPLMFindDataRef("sim/flightmodel/engine/ENGN_running");
+        XPLMDataRef engine_rads = XPLMFindDataRef("sim/flightmodel/engine/ENGN_tacrad");
+        XPLMDataRef engine_power = XPLMFindDataRef("sim/flightmodel/engine/ENGN_power");
+        XPLMDataRef engine_max_power = XPLMFindDataRef("sim/aircraft/engine/acf_pmax_per_engine");
+        XPLMDataRef throttle = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_use");
     }
     struct {
         Eigen::Vector3f accel;
@@ -131,10 +137,11 @@ void Telemetry::UpdateState() {
 
 // convert raw xplane data to ardupilot and send
 void Telemetry::ProcessState() {
-#pragma pack(push,1)
     struct {
         char header[4] = { 'H', 'I', 'T', 'L' };
         int type = 0;
+    } header;
+    struct {
         AP::baro_data_message_t baro;
         AP::mag_data_message_t mag;
         AP::gps_data_message_t gps;
@@ -144,8 +151,8 @@ void Telemetry::ProcessState() {
         float q2 = state.rot.x();
         float q3 = state.rot.y();
         float q4 = state.rot.z();
+        EFI_State efi;
     } msg;
-#pragma pack(pop)
     // Inertial sensor
     if (!Calibration::IsEnabled()) {
         msg.ins.accel = -state.accel * GRAVITY_MSS;
@@ -183,6 +190,30 @@ void Telemetry::ProcessState() {
     // Airspeed
     msg.aspd.differential_pressure = state.dynamic_pressure;
     msg.aspd.temperature = state.temperature;
+    // EFI
+    int engine_running;
+    XPLMGetDatavi(DataRef::engine_running, &engine_running, 0, 1);
+    msg.efi.engine_state = engine_running == 2 ? Engine_State::RUNNING : Engine_State::STOPPED;
+    msg.efi.general_error = false;
+    msg.efi.crankshaft_sensor_status = Crankshaft_Sensor_Status::NOT_SUPPORTED;
+    msg.efi.temperature_status = Temperature_Status::NOT_SUPPORTED;
+    msg.efi.fuel_pressure_status = Fuel_Pressure_Status::NOT_SUPPORTED;
+    msg.efi.oil_pressure_status = Oil_Pressure_Status::NOT_SUPPORTED;
+    msg.efi.detonation_status = Detonation_Status::NOT_SUPPORTED;
+    msg.efi.misfire_status = Misfire_Status::NOT_SUPPORTED;
+    msg.efi.debris_status = Debris_Status::NOT_SUPPORTED;
+    float engine_power;
+    float engine_max_power;
+    XPLMGetDatavf(DataRef::engine_power, &engine_power, 0, 1);
+    XPLMGetDatavf(DataRef::engine_max_power, &engine_max_power, 0, 1);
+    msg.efi.engine_load_percent = engine_power / engine_max_power;
+    float engine_rads;
+    XPLMGetDatavf(DataRef::engine_rads, &engine_rads, 0, 1);
+    msg.efi.engine_speed_rpm = static_cast<uint32_t>(engine_rads * 60.0f / (2 * std::numbers::pi));
+    XPLMGetDatavf(DataRef::throttle, &msg.efi.throttle_out, 0, 1);
+    msg.efi.throttle_position_percent = static_cast<uint8_t>(msg.efi.throttle_out * 100);
+    msg.efi.ignition_voltage = -1;
+    Serial::Send(&header, sizeof(header));
     Serial::Send(&msg, sizeof(msg));
 }
 
