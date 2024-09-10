@@ -102,7 +102,6 @@ void Remote::UpdateDataRefs() {
         XPLMSetDatai(DataRef::override_yaw, 1);
         XPLMSetDatai(DataRef::override_throttle, 1);
         XPLMSetDatai(DataRef::override_prop_pitch, 1);
-        XPLMSetDatai(DataRef::governor, 0);
     } else {
         XPLMSetDatai(DataRef::override_roll, 0);
         XPLMSetDatai(DataRef::override_pitch, 0);
@@ -228,6 +227,7 @@ void Remote::OnPlane() {
 
 void Remote::OnHeli() {
     if (override_joy) {
+        XPLMSetDatai(DataRef::governor, 0);
         XPLMSetDataf(DataRef::roll, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(heli_msg.roll_cyclic)));
         XPLMSetDataf(DataRef::pitch, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(heli_msg.pitch_cyclic)));
 
