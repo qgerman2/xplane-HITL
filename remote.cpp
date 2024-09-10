@@ -19,12 +19,16 @@ namespace Remote {
         XPLMDataRef throttle = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_use");
         XPLMDataRef brake = XPLMFindDataRef("sim/flightmodel/controls/parkbrake");
         XPLMDataRef prop_pitch = XPLMFindDataRef("sim/flightmodel/engine/POINT_pitch_deg_use");
+        XPLMDataRef engine_running = XPLMFindDataRef("sim/flightmodel/engine/ENGN_running");
 
         XPLMDataRef max_prop_pitch = XPLMFindDataRef("sim/aircraft/prop/acf_max_pitch");
         XPLMDataRef min_prop_pitch = XPLMFindDataRef("sim/aircraft/prop/acf_min_pitch");
+
+        XPLMDataRef governor = XPLMFindDataRef("sim/cockpit2/engine/actuators/governor_on");
     }
     namespace Commands {
-        XPLMCommandRef starter = XPLMFindCommand("sim/engines/engage_starters");
+        XPLMCommandRef starter = XPLMFindCommand("sim/operation/auto_start");
+        XPLMCommandRef shutdown = XPLMFindCommand("sim/starters/shut_down");
     }
 
     struct {
@@ -98,6 +102,7 @@ void Remote::UpdateDataRefs() {
         XPLMSetDatai(DataRef::override_yaw, 1);
         XPLMSetDatai(DataRef::override_throttle, 1);
         XPLMSetDatai(DataRef::override_prop_pitch, 1);
+        XPLMSetDatai(DataRef::governor, 0);
     } else {
         XPLMSetDatai(DataRef::override_roll, 0);
         XPLMSetDatai(DataRef::override_pitch, 0);
@@ -109,6 +114,30 @@ void Remote::UpdateDataRefs() {
     XPLMGetDatavf(DataRef::min_prop_pitch, &min_collective, 0, 1);
     XPLMGetDatavf(DataRef::max_prop_pitch, &max_tail, 1, 1);
     XPLMGetDatavf(DataRef::min_prop_pitch, &min_tail, 1, 1);
+}
+
+void Remote::Update() {
+    Receive();
+    int engine_running;
+    XPLMGetDatavi(DataRef::engine_running, &engine_running, 0, 1);
+    // if disarmed
+    if (state_msg.state != 2) {
+        // prop pitch 0 
+        float collective = 0;
+        float tail = 0;
+        XPLMSetDatavf(DataRef::prop_pitch, &collective, 0, 1);
+        XPLMSetDatavf(DataRef::prop_pitch, &tail, 1, 1);
+        // shutdown engines
+        if (engine_running) {
+            XPLMCommandOnce(Commands::shutdown);
+        };
+    } else { // if armed
+        float throttle;
+        XPLMGetDatavf(DataRef::throttle, &throttle, 0, 1);
+        if (!engine_running && throttle > 0) {
+            XPLMCommandOnce(Commands::starter);
+        }
+    }
 }
 
 void Remote::Receive() {
@@ -173,6 +202,7 @@ void Remote::OnState() {
         break;
     }
     UI::Window::LabelRemoteArmed::SetText(armed.c_str());
+    // start engine if armed
     // park brake when unarmed
     if (override_joy) {
         if (state_msg.state == 2) {
@@ -181,30 +211,8 @@ void Remote::OnState() {
             XPLMSetDataf(DataRef::brake, 1);
         }
     }
-    // ignition
-    if (state_msg.starter > 1500) {
-        if (override_joy) {
-            StartIgnition();
-        }
-    } else {
-        StopIgnition();
-    }
     // packet rate
     UI::Window::LabelAHRSCount::SetText(std::format("AHRS: {} Hz", state_msg.ahrs_count));
-}
-
-void Remote::StartIgnition() {
-    if (!starting) {
-        XPLMCommandBegin(Commands::starter);
-        starting = true;
-    }
-}
-
-void Remote::StopIgnition() {
-    if (starting) {
-        XPLMCommandEnd(Commands::starter);
-        starting = false;
-    }
 }
 
 void Remote::OnPlane() {
@@ -212,7 +220,8 @@ void Remote::OnPlane() {
         XPLMSetDataf(DataRef::roll, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.roll)));
         XPLMSetDataf(DataRef::pitch, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.pitch)));
         XPLMSetDataf(DataRef::yaw, map_value(pwm, std::pair(-1.0f, 1.0f), static_cast<float>(plane_msg.yaw)));
-        float throttle[8]; std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(plane_msg.throttle)));
+        float throttle[8];
+        std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(plane_msg.throttle)));
         XPLMSetDatavf(DataRef::throttle, &throttle[0], 0, 8);
     }
 }
@@ -228,7 +237,8 @@ void Remote::OnHeli() {
         XPLMSetDatavf(DataRef::prop_pitch, &collective, 0, 1);
         XPLMSetDatavf(DataRef::prop_pitch, &tail, 1, 1);
 
-        float throttle[8]; std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(heli_msg.throttle)));
+        float throttle[8];
+        std::fill_n(throttle, 8, map_value(pwm, std::pair(0.0f, 1.0f), static_cast<float>(heli_msg.throttle)));
         XPLMSetDatavf(DataRef::throttle, &throttle[0], 0, 8);
     }
 }
