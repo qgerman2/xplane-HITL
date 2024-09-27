@@ -25,28 +25,29 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-HITL/blob/H
 
 ####  Parameters for Arduheli
 
-| Parameter        | Value                                | Description                                                                                   |
-| ---------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
-| FS_THR_ENABLE    | 0                                    | Disable the radio safety switch                                                               |
-| BRD_SAFETY_DEFLT | 0                                    | Disable the vehicle safety switch                                                             |
-| EAHRS_TYPE       | 3                                    | Use the custom ExternalAHRS library                                                           |
-| SERIALX_PROTOCOL | 36                                   | Set serial port as the External AHRS device that X-Plane connects to, SERIAL7 on the PixHawk4 |
-| SERIALX_BAUD     | 115200                               | ExternalAHRS required baud speed                                                              |
-| AHRS_EKF_TYPE    | 11 ExternalAHRS                      | Use X-Plane variables as state estimation                                                     |
-| INS_ENABLE_MASK  | 1                                    | Disable other inertial systems                                                                |
-| GPS_TYPE         | 21 ExternalAHRS                      | Set the main GPS as the external one                                                          |
-| COMPASS_TYPEMASK | * All marked except for ExternalAHRS | Disable the internal compass                                                                  |
-| EFI_TYPE         | 7 Scripting                          | Enable the stub EFI implementation so that the EAHRS driver can update engine variables       |
-| RPM1_TYPE        | 3                                    | Read RPMs from the EFI, requires to use the Search function on Parameters list to find it     |
-| H_COL_ANG_MAX    | 13.5                                 | Max swashplate deflection of the cobra rc                                                     |
-| H_COL_ANG_MIN    | 0                                    | Min swashplate deflection of the cobra rc                                                     |
-| H_RSC_MODE       | 4                                    | Set ardupilot's throttle governor, requires RPM enabled                                       |
-| H_SW_TYPE        | 1                                    | Set H1 non CCPM swashplate mode                                                               |
-| H_COL2YAW        | -0.4                                 | Compensación de paso de helice de cola deacuerdo al colectivo heli cobra                      |
-| ATC_HOVR_ROL_TRM | -350                                 | Roll en hover para compensar torques de ambas helices                                         |
-| AHRS_TRIM_Y      | 0.09                                 | Pitch en hover para compensar drift                                                           |
-| SERVO4_REVERSED  | 1                                    | Reverse yaw controls for the cobra rc                                                         |
-| SCHED_LOOP_RATE  | 100                                  | Set 100hz sensor data rate                                                                    |
+| Parameter               | Value                                | Description                                                                                   |
+| ----------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| FS_THR_ENABLE           | 0                                    | Disable the radio safety switch                                                               |
+| BRD_SAFETY_DEFLT        | 0                                    | Disable the vehicle safety switch                                                             |
+| EAHRS_TYPE              | 3                                    | Use the custom ExternalAHRS library                                                           |
+| SERIALX_PROTOCOL        | 36                                   | Set serial port as the External AHRS device that X-Plane connects to, SERIAL7 on the PixHawk4 |
+| SERIALX_BAUD            | 115200                               | ExternalAHRS required baud speed                                                              |
+| AHRS_EKF_TYPE           | 11 ExternalAHRS                      | Use X-Plane variables as state estimation                                                     |
+| INS_ENABLE_MASK         | 1                                    | Disable other inertial systems                                                                |
+| GPS_TYPE                | 21 ExternalAHRS                      | Set the main GPS as the external one                                                          |
+| COMPASS_TYPEMASK        | * All marked except for ExternalAHRS | Disable the internal compass                                                                  |
+| EFI_TYPE                | 7 Scripting                          | Enable the stub EFI implementation so that the EAHRS driver can update engine variables       |
+| RPM1_TYPE               | 3                                    | Read RPMs from the EFI, requires to use the Search function on Parameters list to find it     |
+| H_COL_ANG_MAX           | 13.5                                 | Max swashplate deflection of the cobra rc                                                     |
+| H_COL_ANG_MIN           | 0                                    | Min swashplate deflection of the cobra rc                                                     |
+| H_RSC_MODE              | 4                                    | Set ardupilot's throttle governor, requires RPM enabled                                       |
+| H_SW_TYPE               | 1                                    | Set H1 non CCPM swashplate mode                                                               |
+| H_COL2YAW               | -0.4                                 | Compensación de paso de helice de cola deacuerdo al colectivo heli cobra                      |
+| ATC_HOVR_ROL_TRM        | -350                                 | Roll en hover para compensar torques de ambas helices                                         |
+| AHRS_TRIM_Y             | 0.09                                 | Pitch en hover para compensar drift                                                           |
+| ATC_ANG_(PIT,RLL,YAW)_P | 10                                   | Ganancias proporcionales controlador PID                                                      |
+| SERVO4_REVERSED         | 1                                    | Reverse yaw controls for the cobra rc                                                         |
+| SCHED_LOOP_RATE         | 100                                  | Set 100hz sensor data rate                                                                    |
 
 
 ## Building the plug-in
