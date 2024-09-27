@@ -45,7 +45,6 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-HITL/blob/H
 | H_COL2YAW        | -0.4                                 | Compensación de paso de helice de cola deacuerdo al colectivo heli cobra                      |
 | ATC_HOVR_ROL_TRM | -350                                 | Roll en hover para compensar torques de ambas helices                                         |
 | AHRS_TRIM_Y      | 0.09                                 | Pitch en hover para compensar drift                                                           |
-
 | SERVO4_REVERSED  | 1                                    | Reverse yaw controls for the cobra rc                                                         |
 | SCHED_LOOP_RATE  | 100                                  | Set 100hz sensor data rate                                                                    |
 
