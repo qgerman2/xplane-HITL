@@ -40,11 +40,20 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-HITL/blob/H
 | RPM1_TYPE               | 3                                    | Read RPMs from the EFI, requires to use the Search function on Parameters list to find it     |
 | H_COL_ANG_MAX           | 13.5                                 | Max swashplate deflection of the cobra rc                                                     |
 | H_COL_ANG_MIN           | 0                                    | Min swashplate deflection of the cobra rc                                                     |
+| H_COL_MAX               | 1900                                 | PWM de maximo colectivo                                                                       |
+| H_COL_MIN               | 1100                                 | PWM de minimo colectivo                                                                       |
 | H_RSC_MODE              | 4                                    | Set ardupilot's throttle governor, requires RPM enabled                                       |
+| H_RSC_THRCRV_0          | 42                                   | Curva de colectivo - throttle para mantener 1000 rpm                                          |
+| H_RSC_THRCRV_25         | 54                                   | Curva de colectivo - throttle para mantener 1000 rpm                                          |
+| H_RSC_THRCRV_50         | 74                                   | Curva de colectivo - throttle para mantener 1000 rpm                                          |
+| H_RSC_THRCRV_75         | 95                                   | Curva de colectivo - throttle para mantener 1000 rpm                                          |
+| H_RSC_THRCRV_100        | 100                                  | Curva de colectivo - throttle para mantener 1000 rpm                                          |
+| H_RSC_GOV_RPM           | 1000                                 | Objetivo rpm del cobra rc                                                                     |
+| H_RSC_GOV_RANGE         | 200                                  | Margen de rpm                                                                                 |
 | H_SW_TYPE               | 1                                    | Set H1 non CCPM swashplate mode                                                               |
-| H_COL2YAW               | -0.4                                 | Compensación de paso de helice de cola deacuerdo al colectivo heli cobra                      |
+| H_COL2YAW               | -0.5                                 | Compensación de paso de helice de cola deacuerdo al colectivo heli cobra                      |
 | ATC_HOVR_ROL_TRM        | -350                                 | Roll en hover para compensar torques de ambas helices                                         |
-| AHRS_TRIM_Y             | 0.09                                 | Pitch en hover para compensar drift                                                           |
+| AHRS_TRIM_Y             | 0.085                                | Pitch en hover para compensar drift                                                           |
 | ATC_ANG_(PIT,RLL,YAW)_P | 10                                   | Ganancias proporcionales controlador PID                                                      |
 | SERVO4_REVERSED         | 1                                    | Reverse yaw controls for the cobra rc                                                         |
 | SCHED_LOOP_RATE         | 100                                  | Set 100hz sensor data rate                                                                    |
