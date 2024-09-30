@@ -36,6 +36,11 @@ namespace Remote {
         int type;
     } header;
 
+    struct {
+        int len;
+        char postamble[3] = { 'E','N','D' };
+    } footer;
+
     enum MSG_TYPE {
         PING,
         STATE,
@@ -72,7 +77,7 @@ namespace Remote {
     };
 
     int pos = 0;
-    uint8_t buffer[300];
+    uint8_t buffer[400];
 
     float max_collective = 0;
     float min_collective = 0;
@@ -164,8 +169,13 @@ void Remote::Receive() {
             }
         }
         // check if there are enough bytes for the packet type
-        if (pos == sizeof(header) + msg_size[header.type]) {
+        if (pos == sizeof(header) + msg_size[header.type] + sizeof(footer)) {
             pos = 0;
+            // check footer
+            memcpy(&footer, &buffer[sizeof(header) + msg_size[header.type]], sizeof(footer));
+            if (footer.len != sizeof(header) + msg_size[header.type]) { break; };
+            if (strncmp(footer.postamble, "END", 3) != 0) { break; };
+            // process message
             switch (header.type) {
             case PING:
                 break;

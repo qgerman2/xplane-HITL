@@ -153,6 +153,10 @@ void Telemetry::ProcessState() {
         float q4 = state.rot.z();
         EFI_State efi;
     } msg;
+    struct {
+        int len = static_cast<int>(sizeof(header) + sizeof(msg));
+        char postamble[3] = { 'E','N','D' };
+    } footer;
     // Inertial sensor
     if (!Calibration::IsEnabled()) {
         msg.ins.accel = -state.accel * GRAVITY_MSS;
@@ -215,6 +219,7 @@ void Telemetry::ProcessState() {
     msg.efi.ignition_voltage = -1;
     Serial::Send(&header, sizeof(header));
     Serial::Send(&msg, sizeof(msg));
+    Serial::Send(&footer, sizeof(footer));
 }
 
 void Telemetry::RestartArdupilot() {

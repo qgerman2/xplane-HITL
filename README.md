@@ -58,6 +58,25 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-HITL/blob/H
 | SERVO4_REVERSED         | 1                                    | Reverse yaw controls for the cobra rc                                                         |
 | SCHED_LOOP_RATE         | 100                                  | Set 100hz sensor data rate                                                                    |
 
+#### Bypass motor interlock
+
+Helicopters require an extra safety switch to start and stop the engine called the motor interlock.
+There is no parameter to disable this check so it needs to be disabled through a Lua script.
+
+```lua
+gcs:send_text(0, "Motor interlock bypass script started")
+
+function update()
+    if arming:is_armed() then
+        rc:run_aux_function(32, 2)
+    else
+        rc:run_aux_function(32, 0)
+    end
+    return update, 1000
+end
+
+return update()
+```
 
 ## Building the plug-in
 
