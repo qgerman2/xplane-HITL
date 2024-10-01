@@ -73,7 +73,7 @@ return update()
 | H_COL_ANG_MAX           | 13.5  | Max swashplate deflection angle                         |
 | H_COL_ANG_MIN           | 0     | Min swashplate deflection angle                         |
 | H_COL_MAX               | 1900  | Max swashplate deflection servo PWM                     |
-| H_COL_MIN               | 1100  | Min swashplate deflection servo PW                      |
+| H_COL_MIN               | 1100  | Min swashplate deflection servo PWM                     |
 | H_RSC_MODE              | 4     | Set ardupilot's throttle governor, requires RPM enabled |
 | H_RSC_THRCRV_0          | 42    | Collective - throttle curve for 1000 RPM                |
 | H_RSC_THRCRV_25         | 54    | Collective - throttle curve for 1000 RPM                |
