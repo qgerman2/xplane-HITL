@@ -1,6 +1,10 @@
 #pragma once
 
 #define GRAVITY_MSS 9.80665f
+// https://forums.x-plane.org/index.php?/forums/topic/297040-measurement-unit-of-fuel-in-cockpit-data-output/#comment-2634247
+#define LBSPERGAL 5.87f
+#define CM3PERGAL 3785
+#define LBSPERKG 2.205f
 
 namespace Telemetry {
     void Send();
