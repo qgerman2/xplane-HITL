@@ -25,6 +25,8 @@ namespace Remote {
         XPLMDataRef min_prop_pitch = XPLMFindDataRef("sim/aircraft/prop/acf_min_pitch");
 
         XPLMDataRef governor = XPLMFindDataRef("sim/cockpit2/engine/actuators/governor_on");
+
+        XPLMDataRef fuel_remaining = XPLMFindDataRef("sim/flightmodel/weight/m_fuel_total");
     }
     namespace Commands {
         XPLMCommandRef starter = XPLMFindCommand("sim/operation/auto_start");
@@ -138,7 +140,8 @@ void Remote::Update() {
     } else { // if armed
         float throttle;
         XPLMGetDatavf(DataRef::throttle, &throttle, 0, 1);
-        if (!engine_running && throttle > 0) {
+        float fuel_remaining = XPLMGetDataf(DataRef::fuel_remaining);
+        if (!engine_running && throttle > 0 && fuel_remaining > 0.1) {
             XPLMCommandOnce(Commands::starter);
         }
     }
