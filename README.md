@@ -66,6 +66,8 @@ return update()
 | COMPASS_TYPEMASK | * All marked except for ExternalAHRS | Disable the internal compass                                                                  |
 | EFI_TYPE         | 7 Scripting                          | Enable the stub EFI implementation so that the EAHRS driver can update engine variables       |
 | RPM1_TYPE        | 3                                    | Read RPMs from the EFI, requires to use the Search function on Parameters list to find it     |
+| BATT_MONITOR     | 27 EFI                               | Enable fuel level indicator                                                                   |
+| BATT_LOW_VOLT    | 0                                    | Disable low battery voltage warning                                                           |
 
 #### Cobra RC specific parameters
 
@@ -89,6 +91,8 @@ return update()
 | AHRS_TRIM_Y             | 0.085 | Pitch offset                                            |
 | ATC_ANG_(PIT,RLL,YAW)_P | 10    | Proportional PID gains                                  |
 | SERVO4_REVERSED         | 1     | Reverse yaw controls for the cobra rc                   |
+| BATT_CAPACITY           | 1676  | Full fuel tank in cm3                                   |
+| BATT_CRT_MAH            | 200   | Set 200 cm3 remaining fuel warning                      |
 
 ## Building the plug-in
 
