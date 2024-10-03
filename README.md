@@ -30,6 +30,7 @@ Follow the instructions [here](https://github.com/qgerman2/ardupilot-Simulink) t
 | FS_THR_ENABLE    | 0     | Disable the radio safety switch                            |
 | BRD_SAFETY_DEFLT | 0     | Disable the vehicle safety switch                          |
 | SCR_ENABLE       | 1     | Enable LUA scripts for the following motor interlock issue |
+| AUTO_OPTIONS     | 2     | Allow auto mode to takeoff without a radio connected       |
 
 #### Bypass motor interlock
 
