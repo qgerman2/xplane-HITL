@@ -78,9 +78,9 @@ namespace Telemetry {
         XPLMDataRef engine_power = XPLMFindDataRef("sim/flightmodel/engine/ENGN_power");
         XPLMDataRef engine_max_power = XPLMFindDataRef("sim/aircraft/engine/acf_pmax_per_engine");
         XPLMDataRef throttle = XPLMFindDataRef("sim/flightmodel/engine/ENGN_thro_use");
-        XPLMDataRef fuel_lb_total = XPLMFindDataRef("sim/aircraft/weight/acf_m_fuel_tot");
-        XPLMDataRef fuel_lb_remaining = XPLMFindDataRef("sim/flightmodel/weight/m_fuel_total");
-        XPLMDataRef fuel_kgs_flow = XPLMFindDataRef("sim/cockpit2/engine/indicators/fuel_flow_kg_sec");
+        XPLMDataRef fuel_total = XPLMFindDataRef("sim/aircraft/weight/acf_m_fuel_tot");
+        XPLMDataRef fuel_remaining = XPLMFindDataRef("sim/flightmodel/weight/m_fuel_total");
+        XPLMDataRef fuel_flow_s = XPLMFindDataRef("sim/cockpit2/engine/indicators/fuel_flow_kg_sec");
     }
     struct {
         Eigen::Vector3f accel;
@@ -220,11 +220,10 @@ void Telemetry::ProcessState() {
     XPLMGetDatavf(DataRef::throttle, &msg.efi.throttle_out, 0, 1);
     msg.efi.throttle_position_percent = static_cast<uint8_t>(msg.efi.throttle_out * 100);
     msg.efi.ignition_voltage = -1;
-    float fuel_lb_used = XPLMGetDataf(DataRef::fuel_lb_total) - XPLMGetDataf(DataRef::fuel_lb_remaining);
-    float fuel_cm3_used = fuel_lb_used * (1 / LBSPERGAL) * CM3PERGAL;
-    msg.efi.estimated_consumed_fuel_volume_cm3 = fuel_cm3_used;
-    float fuel_cm3_flow = XPLMGetDataf(DataRef::fuel_kgs_flow) * LBSPERKG * (1 / LBSPERGAL) * CM3PERGAL * 60;
-    msg.efi.fuel_consumption_rate_cm3pm = fuel_cm3_flow;
+    float fuel_used = (XPLMGetDataf(DataRef::fuel_total) - XPLMGetDataf(DataRef::fuel_remaining)) * (1 / KGPERCM3);
+    msg.efi.estimated_consumed_fuel_volume_cm3 = fuel_used;
+    float fuel_flow = XPLMGetDataf(DataRef::fuel_flow_s) * 60 * (1 / KGPERCM3);
+    msg.efi.fuel_consumption_rate_cm3pm = fuel_flow;
     Serial::Send(&header, sizeof(header));
     Serial::Send(&msg, sizeof(msg));
     Serial::Send(&footer, sizeof(footer));
