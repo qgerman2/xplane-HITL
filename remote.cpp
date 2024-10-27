@@ -124,27 +124,6 @@ void Remote::UpdateDataRefs() {
 
 void Remote::Update() {
     Receive();
-    int engine_running;
-    XPLMGetDatavi(DataRef::engine_running, &engine_running, 0, 1);
-    // if disarmed
-    if (state_msg.state != 2) {
-        // prop pitch 0 
-        float collective = 0;
-        float tail = 0;
-        XPLMSetDatavf(DataRef::prop_pitch, &collective, 0, 1);
-        XPLMSetDatavf(DataRef::prop_pitch, &tail, 1, 1);
-        // shutdown engines
-        if (engine_running) {
-            XPLMCommandOnce(Commands::shutdown);
-        };
-    } else { // if armed
-        float throttle;
-        XPLMGetDatavf(DataRef::throttle, &throttle, 0, 1);
-        float fuel_remaining = XPLMGetDataf(DataRef::fuel_remaining);
-        if (!engine_running && throttle > 0 && fuel_remaining > 0.1) {
-            XPLMCommandOnce(Commands::starter);
-        }
-    }
 }
 
 void Remote::Receive() {
@@ -221,6 +200,28 @@ void Remote::OnState() {
             XPLMSetDataf(DataRef::brake, 0);
         } else {
             XPLMSetDataf(DataRef::brake, 1);
+        }
+        // engine handling
+        int engine_running;
+        XPLMGetDatavi(DataRef::engine_running, &engine_running, 0, 1);
+        // if disarmed
+        if (state_msg.state != 2) {
+            // prop pitch 0 
+            float collective = 0;
+            float tail = 0;
+            XPLMSetDatavf(DataRef::prop_pitch, &collective, 0, 1);
+            XPLMSetDatavf(DataRef::prop_pitch, &tail, 1, 1);
+            // shutdown engines
+            if (engine_running) {
+                XPLMCommandOnce(Commands::shutdown);
+            };
+        } else { // if armed
+            float throttle;
+            XPLMGetDatavf(DataRef::throttle, &throttle, 0, 1);
+            float fuel_remaining = XPLMGetDataf(DataRef::fuel_remaining);
+            if (!engine_running && throttle > 0 && fuel_remaining > 0.1) {
+                XPLMCommandOnce(Commands::starter);
+            }
         }
     }
     // packet rate
