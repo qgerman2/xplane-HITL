@@ -14,7 +14,7 @@
 #include "remote.hpp"
 #include "telemetry.hpp"
 
-#define SCAN_TIMEOUT 100
+#define SCAN_TIMEOUT 3000
 #define SCAN_MAXBYTES 200
 
 namespace Serial {
